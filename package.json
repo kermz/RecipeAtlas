@@ -1,0 +1,16 @@
+{
+  "name": "recipes-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "bash ./dev.sh",
+    "dev:web": "bun --cwd apps/web run dev",
+    "dev:api": "bun --cwd apps/api run dev",
+    "test:web": "bun --cwd apps/web run test",
+    "test:api": "bun --cwd apps/api run test",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down -v"
+  }
+}

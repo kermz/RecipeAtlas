@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --surface: rgba(15, 18, 31, 0.78);
+  --surface-strong: rgba(9, 12, 22, 0.92);
+  --border-soft: rgba(255, 255, 255, 0.12);
+  --accent: #9ab4ff;
+  --accent-strong: #d8e2ff;
+  --danger: #f78da7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background:
+    radial-gradient(circle at top left, rgba(122, 155, 255, 0.28), transparent 30%),
+    radial-gradient(circle at top right, rgba(255, 183, 107, 0.18), transparent 26%),
+    linear-gradient(180deg, #060814 0%, #0c1020 52%, #101728 100%);
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: #f4f7ff;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(138, 163, 255, 0.14), transparent 18%),
+    radial-gradient(circle at 80% 0%, rgba(250, 206, 129, 0.1), transparent 22%),
+    linear-gradient(180deg, rgba(7, 9, 16, 0.9), rgba(13, 17, 31, 0.96));
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(circle at center, black, transparent 88%);
+  opacity: 0.32;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  background: rgba(154, 180, 255, 0.35);
+  color: #fff;
+}
+
+@layer components {
+  .app-heading {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    letter-spacing: -0.02em;
+  }
+}
