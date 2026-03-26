@@ -36,6 +36,7 @@ type IngredientListProps = {
   ingredients: RecipeIngredient[];
   onAdd: () => void;
   onEdit: (ingredient: RecipeIngredient) => void;
+  onTogglePurchased: (ingredient: RecipeIngredient) => Promise<void> | void;
   onReorder: (ingredient: RecipeIngredient, position: number) => Promise<void> | void;
 };
 
@@ -172,13 +173,15 @@ function SortableIngredientRow({
   ingredient,
   displayUnit,
   onDisplayUnitChange,
-  onEdit
+  onEdit,
+  onTogglePurchased
 }: {
   editMode: boolean;
   ingredient: RecipeIngredient;
   displayUnit: IngredientUnit;
   onDisplayUnitChange: (ingredientId: string, unit: IngredientUnit) => void;
   onEdit: (ingredient: RecipeIngredient) => void;
+  onTogglePurchased: (ingredient: RecipeIngredient) => Promise<void> | void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: ingredient.id
@@ -196,55 +199,102 @@ function SortableIngredientRow({
       }}
     >
       <Card
-        className={`overflow-visible border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] px-3 py-2 transition duration-200 hover:border-white/20 hover:bg-white/[0.07] sm:px-5 sm:py-3 ${isDragging ? 'opacity-80 ring-2 ring-[rgba(191,209,171,0.5)]' : ''}`}
+        className={cn(
+          'overflow-visible border px-3 py-2 transition duration-200 sm:px-5 sm:py-3',
+          ingredient.purchased
+            ? 'border-[rgba(191,209,171,0.24)] bg-[linear-gradient(180deg,rgba(191,209,171,0.11),rgba(255,255,255,0.025))] hover:border-[rgba(191,209,171,0.36)]'
+            : 'border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] hover:border-white/20 hover:bg-white/[0.07]',
+          isDragging ? 'opacity-80 ring-2 ring-[rgba(191,209,171,0.5)]' : ''
+        )}
       >
-        <div className={cn('min-w-0', editMode ? 'flex flex-col gap-2.5 lg:flex-row lg:items-center' : '')}>
-          <div className={cn('min-w-0 flex-1', ingredient.notes ? 'space-y-1.5 sm:space-y-2' : '')}>
-            <div className="flex min-h-7 min-w-0 flex-wrap items-center gap-1.5 text-[11px] font-semibold leading-none text-white sm:min-h-9 sm:gap-2 sm:text-base">
-              <span className="inline-flex h-7 items-center leading-none sm:h-8">{formatIngredientQuantity(displayQuantity)}</span>
-              {compatibleUnits.length > 1 ? (
-                <UnitPicker
-                  value={displayUnit}
-                  units={compatibleUnits}
-                  onChange={(unit) => {
-                    onDisplayUnitChange(ingredient.id, unit);
-                  }}
-                />
-              ) : (
-                <span className="inline-flex h-7 items-center leading-none text-[10px] uppercase tracking-[0.12em] sm:h-8 sm:text-xs">{getIngredientUnitLabel(displayUnit)}</span>
-              )}
-              <span className="inline-flex h-7 min-w-0 items-center truncate leading-none sm:h-8">{ingredient.name}</span>
+        <div className={cn('flex gap-3', editMode ? 'items-start' : 'items-center')}>
+          <div className={cn('min-w-0 flex-1', editMode ? 'flex flex-col gap-2.5 lg:flex-row lg:items-center' : '')}>
+            <div className={cn('min-w-0 flex-1', ingredient.notes ? 'space-y-1.5 sm:space-y-2' : '')}>
+              <div className="flex min-h-7 min-w-0 flex-wrap items-center gap-1.5 text-[11px] font-semibold leading-none sm:min-h-9 sm:gap-2 sm:text-base">
+                <span className={cn('inline-flex h-7 items-center leading-none sm:h-8', ingredient.purchased ? 'text-[color:var(--text-secondary)]' : 'text-white')}>
+                  {formatIngredientQuantity(displayQuantity)}
+                </span>
+                {compatibleUnits.length > 1 ? (
+                  <UnitPicker
+                    value={displayUnit}
+                    units={compatibleUnits}
+                    onChange={(unit) => {
+                      onDisplayUnitChange(ingredient.id, unit);
+                    }}
+                  />
+                ) : (
+                  <span
+                    className={cn(
+                      'inline-flex h-7 items-center leading-none text-[10px] uppercase tracking-[0.12em] sm:h-8 sm:text-xs',
+                      ingredient.purchased ? 'text-[color:var(--text-secondary)]' : 'text-white'
+                    )}
+                  >
+                    {getIngredientUnitLabel(displayUnit)}
+                  </span>
+                )}
+                <span
+                  className={cn(
+                    'inline-flex h-7 min-w-0 items-center truncate leading-none sm:h-8',
+                    ingredient.purchased ? 'text-[color:var(--text-secondary)]' : 'text-white'
+                  )}
+                >
+                  {ingredient.name}
+                </span>
+              </div>
+              {ingredient.notes ? (
+                <div className="flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-secondary)] sm:text-xs">
+                  <span
+                    className={cn(
+                      'truncate rounded-full border px-2.5 py-0.5 sm:py-1',
+                      ingredient.purchased ? 'border-[rgba(191,209,171,0.16)] bg-[rgba(191,209,171,0.08)]' : 'border-white/10 bg-white/5'
+                    )}
+                  >
+                    {ingredient.notes}
+                  </span>
+                </div>
+              ) : null}
             </div>
-            {ingredient.notes ? (
-              <div className="flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-secondary)] sm:text-xs">
-                <span className="truncate rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 sm:py-1">{ingredient.notes}</span>
+            {editMode ? (
+              <div className="mt-2 flex flex-wrap items-center gap-2 lg:mt-0 lg:justify-end">
+                <Button size="sm" variant="secondary" onClick={() => onEdit(ingredient)}>
+                  <Pencil className="h-4 w-4" />
+                  Edit
+                </Button>
+                <button
+                  aria-label={`Drag ingredient ${ingredient.name}`}
+                  className="inline-flex h-9 w-9 touch-none items-center justify-center rounded-xl border border-white/12 bg-white/8 text-slate-100 transition-all duration-200 active:scale-[0.96] hover:bg-white/12 focus:outline-none focus:ring-2 focus:ring-[rgba(191,209,171,0.72)] focus:ring-offset-2 focus:ring-offset-transparent"
+                  type="button"
+                  {...attributes}
+                  {...listeners}
+                >
+                  <GripVertical className="h-4 w-4" />
+                </button>
               </div>
             ) : null}
           </div>
-          {editMode ? (
-            <div className="mt-2 flex flex-wrap items-center gap-2 lg:mt-0 lg:justify-end">
-              <Button size="sm" variant="secondary" onClick={() => onEdit(ingredient)}>
-                <Pencil className="h-4 w-4" />
-                Edit
-              </Button>
-              <button
-                aria-label={`Drag ingredient ${ingredient.name}`}
-                className="inline-flex h-9 w-9 touch-none items-center justify-center rounded-xl border border-white/12 bg-white/8 text-slate-100 transition-all duration-200 active:scale-[0.96] hover:bg-white/12 focus:outline-none focus:ring-2 focus:ring-[rgba(191,209,171,0.72)] focus:ring-offset-2 focus:ring-offset-transparent"
-                type="button"
-                {...attributes}
-                {...listeners}
-              >
-                <GripVertical className="h-4 w-4" />
-              </button>
-            </div>
-          ) : null}
+          <button
+            type="button"
+            aria-pressed={ingredient.purchased}
+            aria-label={`Mark ${ingredient.name} as ${ingredient.purchased ? 'missing' : 'bought'}`}
+            className={cn(
+              'inline-flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-2xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[rgba(191,209,171,0.72)] focus:ring-offset-2 focus:ring-offset-transparent',
+              ingredient.purchased
+                ? 'border-[rgba(191,209,171,0.35)] bg-[linear-gradient(135deg,rgba(191,209,171,0.98),rgba(118,144,103,0.95))] text-slate-950 shadow-[0_14px_28px_rgba(76,98,67,0.22)]'
+                : 'border-white/12 bg-white/8 text-[color:var(--text-secondary)] hover:border-white/20 hover:bg-white/12 hover:text-white'
+            )}
+            onClick={() => {
+              void onTogglePurchased(ingredient);
+            }}
+          >
+            <Check className={cn('h-4 w-4 transition-opacity duration-150', ingredient.purchased ? 'opacity-100' : 'opacity-40')} />
+          </button>
         </div>
       </Card>
     </div>
   );
 }
 
-export function IngredientList({ editMode, ingredients, onAdd, onEdit, onReorder }: IngredientListProps) {
+export function IngredientList({ editMode, ingredients, onAdd, onEdit, onTogglePurchased, onReorder }: IngredientListProps) {
   const [displayUnits, setDisplayUnits] = useState<Record<string, IngredientUnit>>({});
   const [orderedIngredients, setOrderedIngredients] = useState(ingredients);
 
@@ -348,6 +398,7 @@ export function IngredientList({ editMode, ingredients, onAdd, onEdit, onReorder
                 }));
               }}
               onEdit={onEdit}
+              onTogglePurchased={onTogglePurchased}
             />
           ))}
         </div>

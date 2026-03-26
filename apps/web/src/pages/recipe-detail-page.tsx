@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, Pencil, Plus, RefreshCcw, RotateCcw, Settings2 } from 'lucide-react';
+import { ArrowLeft, Check, Pencil, Plus, RefreshCcw, RotateCcw, Settings2, ShoppingBasket } from 'lucide-react';
 import { CelebrationConfetti } from '../components/celebration-confetti';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -8,7 +8,7 @@ import { PageHeader } from '../components/page-header';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { IngredientDialog, type IngredientFormValues } from '../features/ingredients/ingredient-dialog';
 import { IngredientList } from '../features/ingredients/ingredient-list';
-import { useCreateIngredient, useDeleteIngredient, useUpdateIngredient } from '../features/ingredients/hooks';
+import { useCreateIngredient, useDeleteIngredient, useResetIngredients, useUpdateIngredient } from '../features/ingredients/hooks';
 import { RecipeDialog, type RecipeFormValues } from '../features/recipes/recipe-dialog';
 import { formatRecipeTotalTime } from '../features/recipes/total-time';
 import { StepDialog, type StepFormValues } from '../features/recipe-steps/step-dialog';
@@ -38,6 +38,7 @@ export function RecipeDetailPage() {
   const createIngredient = useCreateIngredient(recipeId ?? '');
   const updateIngredient = useUpdateIngredient(recipeId ?? '');
   const deleteIngredient = useDeleteIngredient(recipeId ?? '');
+  const resetIngredients = useResetIngredients(recipeId ?? '');
   const deleteRecipe = useDeleteRecipe();
   const createStep = useCreateStep(recipeId ?? '');
   const updateStep = useUpdateStep(recipeId ?? '');
@@ -61,6 +62,7 @@ export function RecipeDetailPage() {
 
   const nextPosition = sortedSteps.length > 0 ? sortedSteps[sortedSteps.length - 1].position + 1 : 1;
   const resettableStepIds = sortedSteps.filter((step) => step.completedAt || step.timerStartedAt).map((step) => step.id);
+  const hasPurchasedIngredients = sortedIngredients.some((ingredient) => ingredient.purchased);
 
   useEffect(() => {
     const previousProgress = previousProgressRef.current;
@@ -220,21 +222,35 @@ export function RecipeDetailPage() {
         <div className="space-y-6">
           <div className="grid gap-6 xl:grid-cols-[minmax(360px,0.82fr)_minmax(0,1.5fr)]">
             <section className="rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-2.5 pt-3.5 pb-2.5 shadow-[0_24px_70px_rgba(0,0,0,0.18)] sm:rounded-[30px] sm:p-6">
-              <div className="flex flex-col gap-3 border-b border-white/8 pb-3.5 sm:gap-4 sm:pb-5 sm:flex-row sm:items-start sm:justify-between">
-                <h2 className="app-heading text-[1.2rem] font-semibold leading-[1.02] text-white sm:text-3xl">Ingredients</h2>
-                {isEditMode ? (
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setEditingIngredient(null);
-                      setIngredientDialogOpen(true);
-                    }}
-                    className="sm:self-start"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add ingredient
-                  </Button>
-                ) : null}
+              <div className="flex items-center justify-between gap-2 border-b border-white/8 px-1 pb-3.5 sm:px-0 sm:pb-5">
+                <h2 className="app-heading min-w-0 text-[1.2rem] font-semibold leading-[1.02] text-white sm:text-3xl">Ingredients</h2>
+                <div className="flex shrink-0 items-center gap-2">
+                  {hasPurchasedIngredients ? (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={resetIngredients.isPending}
+                      onClick={async () => {
+                        await resetIngredients.mutateAsync();
+                      }}
+                    >
+                      <ShoppingBasket className="h-4 w-4" />
+                      Reset
+                    </Button>
+                  ) : null}
+                  {isEditMode ? (
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setEditingIngredient(null);
+                        setIngredientDialogOpen(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add ingredient
+                    </Button>
+                  ) : null}
+                </div>
               </div>
               <div className="mt-3 sm:mt-5">
                 <IngredientList
@@ -247,6 +263,12 @@ export function RecipeDetailPage() {
                   onEdit={(ingredient) => {
                     setEditingIngredient(ingredient);
                     setIngredientDialogOpen(true);
+                  }}
+                  onTogglePurchased={async (ingredient) => {
+                    await updateIngredient.mutateAsync({
+                      ingredientId: ingredient.id,
+                      input: { purchased: !ingredient.purchased }
+                    });
                   }}
                   onReorder={async (ingredient, position) => {
                     await updateIngredient.mutateAsync({

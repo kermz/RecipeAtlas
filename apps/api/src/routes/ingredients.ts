@@ -69,6 +69,7 @@ export const registerIngredientRoutes: FastifyPluginAsync<IngredientRoutesOption
           quantity: body.quantity,
           unit: body.unit,
           notes: body.notes,
+          purchased: body.purchased,
           position: nextPosition
         }
       });

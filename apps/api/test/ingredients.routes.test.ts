@@ -13,7 +13,7 @@ describe("ingredient routes", () => {
     await app.close();
   });
 
-  it("supports ingredient CRUD, conversion-ready units, and ordered positions", async () => {
+  it("supports ingredient CRUD, purchased tracking, reset, and ordered positions", async () => {
     const recipeResponse = await request(app.server)
       .post("/recipes")
       .send({
@@ -32,7 +32,10 @@ describe("ingredient routes", () => {
         notes: "Warm before adding",
         position: 1
       })
-      .expect(201);
+      .expect(201)
+      .expect((response) => {
+        expect(response.body.purchased).toBe(false);
+      });
 
     const salt = await request(app.server)
       .post(`/recipes/${recipeId}/ingredients`)
@@ -49,12 +52,14 @@ describe("ingredient routes", () => {
       .send({
         quantity: 0.5,
         unit: "oz",
+        purchased: true,
         position: 1
       })
       .expect(200)
       .expect((response) => {
         expect(response.body.quantity).toBe(0.5);
         expect(response.body.unit).toBe("oz");
+        expect(response.body.purchased).toBe(true);
         expect(response.body.position).toBe(1);
       });
 
@@ -67,6 +72,18 @@ describe("ingredient routes", () => {
           stock.body.id
         ]);
         expect(response.body.ingredients.map((ingredient: { position: number }) => ingredient.position)).toEqual([1, 2]);
+        expect(response.body.ingredients.map((ingredient: { purchased: boolean }) => ingredient.purchased)).toEqual([true, false]);
+      });
+
+    await request(app.server)
+      .post(`/recipes/${recipeId}/ingredients/reset`)
+      .expect(204);
+
+    await request(app.server)
+      .get(`/recipes/${recipeId}`)
+      .expect(200)
+      .expect((response) => {
+        expect(response.body.ingredients.map((ingredient: { purchased: boolean }) => ingredient.purchased)).toEqual([false, false]);
       });
 
     await request(app.server)

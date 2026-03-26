@@ -43,6 +43,7 @@ function resetStore() {
         quantity: 500,
         unit: 'g',
         notes: 'Strong white flour',
+        purchased: false,
         createdAt: timestamp,
         updatedAt: timestamp
       }
@@ -182,6 +183,7 @@ export const handlers = [
       quantity: number;
       unit: RecipeIngredient['unit'];
       notes?: string | null;
+      purchased?: boolean;
       position: number;
     };
 
@@ -194,6 +196,7 @@ export const handlers = [
       quantity: body.quantity,
       unit: body.unit,
       notes: body.notes ?? null,
+      purchased: body.purchased ?? false,
       createdAt: timestamp,
       updatedAt: timestamp
     };
@@ -264,6 +267,7 @@ export const handlers = [
       quantity: number;
       unit: RecipeIngredient['unit'];
       notes: string | null;
+      purchased: boolean;
       position: number;
     }>;
 
@@ -277,8 +281,14 @@ export const handlers = [
       ingredient.quantity = body.quantity ?? ingredient.quantity;
       ingredient.unit = body.unit ?? ingredient.unit;
       ingredient.notes = body.notes ?? ingredient.notes;
+      ingredient.purchased = body.purchased ?? ingredient.purchased;
       ingredient.position = body.position ?? ingredient.position;
       ingredient.updatedAt = now();
+
+      const recipe = getRecipe(ingredient.recipeId);
+      if (recipe) {
+        recipe.updatedAt = ingredient.updatedAt;
+      }
 
       return HttpResponse.json(ingredient);
     }
@@ -310,6 +320,24 @@ export const handlers = [
     for (const [recipeId, recipeIngredients] of Object.entries(ingredients)) {
       ingredients[recipeId] = recipeIngredients.filter((ingredient) => ingredient.id !== ingredientId);
     }
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.post(`${apiBase}/recipes/:recipeId/ingredients/reset`, ({ params }) => {
+    const recipeId = params.recipeId as string;
+    const recipe = getRecipe(recipeId);
+    if (!recipe) {
+      return HttpResponse.json({ message: 'Recipe not found' }, { status: 404 });
+    }
+
+    const timestamp = now();
+    ingredients[recipeId] = (ingredients[recipeId] ?? []).map((ingredient) => ({
+      ...ingredient,
+      purchased: false,
+      updatedAt: timestamp
+    }));
+    recipe.updatedAt = timestamp;
+
     return new HttpResponse(null, { status: 204 });
   }),
 

@@ -18,6 +18,7 @@ type IngredientRecord = {
   quantity: number;
   unit: string;
   notes: string | null;
+  purchased: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -148,8 +149,8 @@ function createPrismaDouble() {
         where,
         data
       }: {
-        where: { recipeId: string; position: { gte?: number; gt?: number; lte?: number; lt?: number } };
-        data: { position: { increment?: number; decrement?: number } };
+        where: { recipeId: string; position?: { gte?: number; gt?: number; lte?: number; lt?: number }; purchased?: boolean };
+        data: { position?: { increment?: number; decrement?: number }; purchased?: boolean };
       }) => {
         const matches = [...ingredients.values()].filter((ingredient) => {
           if (ingredient.recipeId !== where.recipeId) {
@@ -157,27 +158,37 @@ function createPrismaDouble() {
           }
 
           const position = where.position;
-          if (position.gte !== undefined && ingredient.position < position.gte) {
+          if (position) {
+            if (position.gte !== undefined && ingredient.position < position.gte) {
+              return false;
+            }
+            if (position.gt !== undefined && ingredient.position <= position.gt) {
+              return false;
+            }
+            if (position.lte !== undefined && ingredient.position > position.lte) {
+              return false;
+            }
+            if (position.lt !== undefined && ingredient.position >= position.lt) {
+              return false;
+            }
+          }
+
+          if (where.purchased !== undefined && ingredient.purchased !== where.purchased) {
             return false;
           }
-          if (position.gt !== undefined && ingredient.position <= position.gt) {
-            return false;
-          }
-          if (position.lte !== undefined && ingredient.position > position.lte) {
-            return false;
-          }
-          if (position.lt !== undefined && ingredient.position >= position.lt) {
-            return false;
-          }
+
           return true;
         });
 
         for (const ingredient of matches) {
-          if (data.position.increment !== undefined) {
+          if (data.position?.increment !== undefined) {
             ingredient.position += data.position.increment;
           }
-          if (data.position.decrement !== undefined) {
+          if (data.position?.decrement !== undefined) {
             ingredient.position -= data.position.decrement;
+          }
+          if (data.purchased !== undefined) {
+            ingredient.purchased = data.purchased;
           }
           ingredient.updatedAt = new Date(fixedNow);
           ingredients.set(ingredient.id, ingredient);
@@ -194,6 +205,7 @@ function createPrismaDouble() {
           quantity: number;
           unit: string;
           notes?: string | null;
+          purchased?: boolean;
           position: number;
         };
       }) => {
@@ -204,6 +216,7 @@ function createPrismaDouble() {
           quantity: data.quantity,
           unit: data.unit,
           notes: data.notes ?? null,
+          purchased: data.purchased ?? false,
           position: data.position,
           createdAt: new Date(fixedNow),
           updatedAt: new Date(fixedNow)
@@ -233,7 +246,7 @@ function createPrismaDouble() {
         data
       }: {
         where: { id: string };
-        data: Partial<Pick<IngredientRecord, "name" | "quantity" | "unit" | "notes" | "position">>;
+        data: Partial<Pick<IngredientRecord, "name" | "quantity" | "unit" | "notes" | "purchased" | "position">>;
       }) => {
         const ingredient = ingredients.get(where.id);
         if (!ingredient) {
@@ -251,6 +264,9 @@ function createPrismaDouble() {
         }
         if (data.notes !== undefined) {
           ingredient.notes = data.notes;
+        }
+        if (data.purchased !== undefined) {
+          ingredient.purchased = data.purchased;
         }
         if (data.position !== undefined) {
           ingredient.position = data.position;

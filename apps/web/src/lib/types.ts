@@ -10,6 +10,7 @@ export type RecipeIngredient = {
   quantity: number;
   unit: IngredientUnit;
   notes: string | null;
+  purchased: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -61,5 +62,6 @@ export type RecipeIngredientInput = {
   quantity: number;
   unit: IngredientUnit;
   notes?: string | null;
+  purchased?: boolean;
   position: number;
 };

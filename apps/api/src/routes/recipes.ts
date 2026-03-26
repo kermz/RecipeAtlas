@@ -186,11 +186,33 @@ export const registerRecipeRoutes: FastifyPluginAsync<RecipeRoutesOptions> = asy
           quantity: body.quantity,
           unit: body.unit,
           notes: body.notes ?? null,
+          purchased: body.purchased ?? false,
           position
         }
       });
     });
 
     return reply.status(201).send(ingredient);
+  });
+
+  app.post("/:recipeId/ingredients/reset", async (request, reply) => {
+    const { recipeId } = parseOrThrow(recipeIngredientRecipeParamsSchema, request.params);
+
+    const recipe = await prisma.recipe.findUnique({ where: { id: recipeId } });
+    if (!recipe) {
+      throw new HttpError("Recipe not found", 404);
+    }
+
+    await prisma.recipeIngredient.updateMany({
+      where: {
+        recipeId,
+        purchased: true
+      },
+      data: {
+        purchased: false
+      }
+    });
+
+    return reply.status(204).send();
   });
 };

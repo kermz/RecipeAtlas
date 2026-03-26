@@ -12,3 +12,7 @@ export function updateIngredient(ingredientId: string, input: Partial<RecipeIngr
 export function deleteIngredient(ingredientId: string) {
   return api.delete<void>(`/ingredients/${ingredientId}`);
 }
+
+export function resetIngredients(recipeId: string) {
+  return api.post<void>(`/recipes/${recipeId}/ingredients/reset`);
+}

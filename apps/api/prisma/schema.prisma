@@ -40,6 +40,7 @@ model RecipeIngredient {
   quantity  Float
   unit      String
   notes     String?
+  purchased Boolean  @default(false)
   position  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -56,6 +56,7 @@ export const ingredientBodySchema = z.object({
   quantity: z.coerce.number().positive("Quantity must be greater than 0").max(100000),
   unit: ingredientUnitSchema,
   notes: z.string().trim().max(1000).optional().nullable(),
+  purchased: z.boolean().optional(),
   position: z.coerce.number().int().positive().optional()
 });
 
