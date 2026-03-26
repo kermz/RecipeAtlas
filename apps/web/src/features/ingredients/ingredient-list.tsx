@@ -277,16 +277,16 @@ function SortableIngredientRow({
             aria-pressed={ingredient.purchased}
             aria-label={`Mark ${ingredient.name} as ${ingredient.purchased ? 'missing' : 'bought'}`}
             className={cn(
-              'inline-flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-2xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[rgba(191,209,171,0.72)] focus:ring-offset-2 focus:ring-offset-transparent',
+              'inline-flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[rgba(191,209,171,0.72)] focus:ring-offset-2 focus:ring-offset-transparent sm:h-10 sm:w-10 sm:rounded-2xl',
               ingredient.purchased
                 ? 'border-[rgba(191,209,171,0.35)] bg-[linear-gradient(135deg,rgba(191,209,171,0.98),rgba(118,144,103,0.95))] text-slate-950 shadow-[0_14px_28px_rgba(76,98,67,0.22)]'
-                : 'border-white/12 bg-white/8 text-[color:var(--text-secondary)] hover:border-white/20 hover:bg-white/12 hover:text-white'
+                : 'border-[rgba(191,209,171,0.18)] bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))] text-[color:var(--accent-strong)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:border-[rgba(191,209,171,0.3)] hover:bg-white/10 hover:text-[color:var(--accent-strong)]'
             )}
             onClick={() => {
               void onTogglePurchased(ingredient);
             }}
           >
-            <Check className={cn('h-4 w-4 transition-opacity duration-150', ingredient.purchased ? 'opacity-100' : 'opacity-40')} />
+            <Check className={cn('h-3.5 w-3.5 transition-opacity duration-150 sm:h-4 sm:w-4', ingredient.purchased ? 'opacity-100' : 'opacity-40')} />
           </button>
         </div>
       </Card>

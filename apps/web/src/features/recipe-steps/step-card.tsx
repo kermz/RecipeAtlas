@@ -110,9 +110,9 @@ export function StepCard({
               </h3>
               <Button
                 size="sm"
-                variant="primary"
+                variant="secondary"
                 aria-label={`Mark step ${step.position} done`}
-                className="h-8 w-8 shrink-0 self-center px-0 sm:hidden"
+                className="h-8 w-8 shrink-0 self-center border-[rgba(191,209,171,0.18)] px-0 text-[color:var(--accent-strong)] hover:border-[rgba(191,209,171,0.3)] hover:text-[color:var(--accent-strong)] sm:hidden"
                 onClick={async () => {
                   await Promise.resolve(onComplete(step));
                 }}

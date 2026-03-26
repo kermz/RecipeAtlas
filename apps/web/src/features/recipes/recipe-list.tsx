@@ -141,9 +141,9 @@ export function RecipeList({ recipes, isLoading, onCreate }: RecipeListProps) {
               </p>
 
               <div className="mt-6 flex flex-wrap items-center gap-2">
-                <Badge tone="neutral">{recipe.ingredientsCount ?? recipe.ingredients?.length ?? 0} ingredients</Badge>
+                <Badge tone="accent">{recipe.ingredientsCount ?? recipe.ingredients?.length ?? 0} ingredients</Badge>
                 <Badge tone="accent">{recipe.stepsCount ?? recipe.steps?.length ?? 0} steps</Badge>
-                <Badge tone="neutral">{formatRecipeTotalTime(recipe)}</Badge>
+                <Badge tone="accent">{formatRecipeTotalTime(recipe)}</Badge>
               </div>
             </div>
 

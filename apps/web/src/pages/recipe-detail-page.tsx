@@ -210,9 +210,9 @@ export function RecipeDetailPage() {
         description={recipe?.description ?? 'The recipe description will appear here once loaded.'}
         action={
           <div className="flex flex-wrap items-center gap-2 xl:max-w-md xl:justify-end">
-            <Badge tone="neutral">{recipe?.ingredients.length ?? 0} ingredients</Badge>
+            <Badge tone="accent">{recipe?.ingredients.length ?? 0} ingredients</Badge>
             <Badge tone="accent">{recipe?.steps.length ?? 0} steps</Badge>
-            <Badge tone="neutral">{recipe ? formatRecipeTotalTime(recipe) : 'No timers'}</Badge>
+            <Badge tone="accent">{recipe ? formatRecipeTotalTime(recipe) : 'No timers'}</Badge>
             {recipeQuery.isFetching ? <Badge tone="neutral">Syncing...</Badge> : null}
           </div>
         }
