@@ -24,6 +24,7 @@ import { EmptyState } from '../../components/ui/empty-state';
 import { StepCard } from './step-card';
 
 type StepListProps = {
+  editMode: boolean;
   steps: RecipeStep[];
   onAdd: () => void;
   onEdit: (step: RecipeStep) => void;
@@ -34,12 +35,14 @@ type StepListProps = {
 };
 
 function SortableStepCard({
+  editMode,
   step,
   onEdit,
   onComplete,
   onReset,
   onStartTimer
 }: {
+  editMode: boolean;
   step: RecipeStep;
   onEdit: (step: RecipeStep) => void;
   onComplete: (step: RecipeStep) => void;
@@ -59,6 +62,7 @@ function SortableStepCard({
       }}
     >
       <StepCard
+        editMode={editMode}
         step={step}
         onEdit={onEdit}
         onComplete={onComplete}
@@ -72,7 +76,7 @@ function SortableStepCard({
   );
 }
 
-export function StepList({ steps, onAdd, onEdit, onComplete, onReset, onStartTimer, onReorder }: StepListProps) {
+export function StepList({ editMode, steps, onAdd, onEdit, onComplete, onReset, onStartTimer, onReorder }: StepListProps) {
   const [orderedSteps, setOrderedSteps] = useState(steps);
 
   useEffect(() => {
@@ -101,18 +105,26 @@ export function StepList({ steps, onAdd, onEdit, onComplete, onReset, onStartTim
     return (
       <EmptyState
         title="No steps yet"
-        description="Add ordered steps to track the process, attach timers, and mark completion timestamps when each step is finished."
-        action={
+        description={
+          editMode
+            ? 'Add ordered steps to track the process, attach timers, and mark completion timestamps when each step is finished.'
+            : 'Turn on edit mode when you want to add or rearrange the cooking flow for this recipe.'
+        }
+        action={editMode ? (
           <Button onClick={onAdd}>
             <Plus className="h-4 w-4" />
             Add your first step
           </Button>
-        }
+        ) : undefined}
       />
     );
   }
 
   const handleDragEnd = async (event: DragEndEvent) => {
+    if (!editMode) {
+      return;
+    }
+
     const { active, over } = event;
 
     if (!over || active.id === over.id) {
@@ -148,6 +160,7 @@ export function StepList({ steps, onAdd, onEdit, onComplete, onReset, onStartTim
           {orderedSteps.map((step) => (
             <SortableStepCard
               key={step.id}
+              editMode={editMode}
               step={step}
               onEdit={onEdit}
               onComplete={onComplete}

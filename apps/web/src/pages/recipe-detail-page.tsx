@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Plus, RefreshCcw, RotateCcw, Settings2 } from 'lucide-react';
+import { ArrowLeft, Check, Pencil, Plus, RefreshCcw, RotateCcw, Settings2 } from 'lucide-react';
+import { CelebrationConfetti } from '../components/celebration-confetti';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { PageHeader } from '../components/page-header';
@@ -25,11 +26,13 @@ export function RecipeDetailPage() {
   const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
   const [ingredientDialogOpen, setIngredientDialogOpen] = useState(false);
   const [stepDialogOpen, setStepDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<RecipeIngredient | null>(null);
   const [editingStep, setEditingStep] = useState<RecipeStep | null>(null);
   const [deletingRecipe, setDeletingRecipe] = useState(false);
   const [deletingIngredient, setDeletingIngredient] = useState<RecipeIngredient | null>(null);
   const [deletingStep, setDeletingStep] = useState<RecipeStep | null>(null);
+  const [activeConfettiBurst, setActiveConfettiBurst] = useState(0);
 
   const updateRecipe = useUpdateRecipe(recipeId ?? '');
   const createIngredient = useCreateIngredient(recipeId ?? '');
@@ -52,9 +55,36 @@ export function RecipeDetailPage() {
     () => [...(recipe?.steps ?? [])].sort((left, right) => left.position - right.position),
     [recipe?.steps]
   );
+  const completedStepCount = sortedSteps.filter((step) => Boolean(step.completedAt)).length;
+  const stepProgressPercent = sortedSteps.length > 0 ? Math.round((completedStepCount / sortedSteps.length) * 100) : 0;
+  const previousProgressRef = useRef(stepProgressPercent);
 
   const nextPosition = sortedSteps.length > 0 ? sortedSteps[sortedSteps.length - 1].position + 1 : 1;
   const resettableStepIds = sortedSteps.filter((step) => step.completedAt || step.timerStartedAt).map((step) => step.id);
+
+  useEffect(() => {
+    const previousProgress = previousProgressRef.current;
+
+    if (sortedSteps.length > 0 && previousProgress < 100 && stepProgressPercent === 100) {
+      setActiveConfettiBurst(Date.now());
+    }
+
+    previousProgressRef.current = stepProgressPercent;
+  }, [sortedSteps.length, stepProgressPercent]);
+
+  useEffect(() => {
+    if (!activeConfettiBurst) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setActiveConfettiBurst(0);
+    }, 5200);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [activeConfettiBurst]);
 
   if (!recipeId) {
     return null;
@@ -124,19 +154,21 @@ export function RecipeDetailPage() {
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button variant="secondary" asChild>
+      <CelebrationConfetti active={Boolean(activeConfettiBurst)} burstKey={activeConfettiBurst} />
+      <div className="flex flex-col gap-1.5 rounded-[20px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] p-2 sm:gap-3 sm:rounded-[28px] sm:p-4 sm:flex-row sm:items-center sm:justify-between">
+        <Button size="sm" variant="secondary" asChild className="justify-center sm:justify-start">
           <Link to="/recipes">
             <ArrowLeft className="h-4 w-4" />
             Back to recipes
           </Link>
         </Button>
-        <div className="flex flex-wrap gap-3">
-          <Button variant="secondary" onClick={() => recipeQuery.refetch()}>
+        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+          <Button size="sm" variant="secondary" onClick={() => recipeQuery.refetch()}>
             <RefreshCcw className="h-4 w-4" />
             Refresh
           </Button>
           <Button
+            size="sm"
             variant="secondary"
             disabled={resettableStepIds.length === 0 || resetAllSteps.isPending}
             onClick={async () => {
@@ -150,13 +182,22 @@ export function RecipeDetailPage() {
             <RotateCcw className="h-4 w-4" />
             Reset all steps
           </Button>
-          <Button variant="secondary" onClick={() => setRecipeDialogOpen(true)}>
-            <Settings2 className="h-4 w-4" />
-            Edit recipe
-          </Button>
-          <Button onClick={() => setStepDialogOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Add step
+          {isEditMode ? (
+            <Button size="sm" variant="secondary" onClick={() => setRecipeDialogOpen(true)}>
+              <Settings2 className="h-4 w-4" />
+              Edit recipe
+            </Button>
+          ) : null}
+          <Button
+            size="sm"
+            variant={isEditMode ? 'primary' : 'secondary'}
+            className={isEditMode ? 'ml-auto' : undefined}
+            onClick={() => {
+              setIsEditMode((current) => !current);
+            }}
+          >
+            {isEditMode ? <Check className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+            {isEditMode ? 'Done editing' : 'Edit mode'}
           </Button>
         </div>
       </div>
@@ -166,98 +207,127 @@ export function RecipeDetailPage() {
         title={recipe?.title ?? 'Loading recipe...'}
         description={recipe?.description ?? 'The recipe description will appear here once loaded.'}
         action={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 xl:max-w-md xl:justify-end">
             <Badge tone="neutral">{recipe?.ingredients.length ?? 0} ingredients</Badge>
             <Badge tone="accent">{recipe?.steps.length ?? 0} steps</Badge>
             <Badge tone="neutral">{recipe ? formatRecipeTotalTime(recipe) : 'No timers'}</Badge>
-            <Badge tone="neutral">{recipeQuery.isFetching ? 'Syncing...' : 'Live data'}</Badge>
+            {recipeQuery.isFetching ? <Badge tone="neutral">Syncing...</Badge> : null}
           </div>
         }
       />
 
       {recipe ? (
-        <div className="space-y-8">
-          <section className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="app-heading text-3xl font-semibold text-white">Ingredients</h2>
-                <p className="mt-2 text-sm text-slate-300">Track ingredient amounts with unit-aware conversions for each row.</p>
+        <div className="space-y-6">
+          <div className="grid gap-6 xl:grid-cols-[minmax(360px,0.82fr)_minmax(0,1.5fr)]">
+            <section className="rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-2.5 pt-3.5 pb-2.5 shadow-[0_24px_70px_rgba(0,0,0,0.18)] sm:rounded-[30px] sm:p-6">
+              <div className="flex flex-col gap-3 border-b border-white/8 pb-3.5 sm:gap-4 sm:pb-5 sm:flex-row sm:items-start sm:justify-between">
+                <h2 className="app-heading text-[1.2rem] font-semibold leading-[1.02] text-white sm:text-3xl">Ingredients</h2>
+                {isEditMode ? (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setEditingIngredient(null);
+                      setIngredientDialogOpen(true);
+                    }}
+                    className="sm:self-start"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add ingredient
+                  </Button>
+                ) : null}
               </div>
-              <Button
-                onClick={() => {
-                  setEditingIngredient(null);
-                  setIngredientDialogOpen(true);
-                }}
-              >
-                <Plus className="h-4 w-4" />
-                Add ingredient
-              </Button>
-            </div>
-            <IngredientList
-              ingredients={sortedIngredients}
-              onAdd={() => {
-                setEditingIngredient(null);
-                setIngredientDialogOpen(true);
-              }}
-              onEdit={(ingredient) => {
-                setEditingIngredient(ingredient);
-                setIngredientDialogOpen(true);
-              }}
-              onReorder={async (ingredient, position) => {
-                await updateIngredient.mutateAsync({
-                  ingredientId: ingredient.id,
-                  input: { position }
-                });
-              }}
-            />
-          </section>
+              <div className="mt-3 sm:mt-5">
+                <IngredientList
+                  editMode={isEditMode}
+                  ingredients={sortedIngredients}
+                  onAdd={() => {
+                    setEditingIngredient(null);
+                    setIngredientDialogOpen(true);
+                  }}
+                  onEdit={(ingredient) => {
+                    setEditingIngredient(ingredient);
+                    setIngredientDialogOpen(true);
+                  }}
+                  onReorder={async (ingredient, position) => {
+                    await updateIngredient.mutateAsync({
+                      ingredientId: ingredient.id,
+                      input: { position }
+                    });
+                  }}
+                />
+              </div>
+            </section>
 
-          <section className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="app-heading text-3xl font-semibold text-white">Steps</h2>
-                <p className="mt-2 text-sm text-slate-300">Keep the method in order, track timers, and mark steps as they finish.</p>
+            <section className="rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-2.5 pt-3.5 pb-2.5 shadow-[0_24px_70px_rgba(0,0,0,0.18)] sm:rounded-[30px] sm:p-6">
+              <div className="flex flex-col gap-3 border-b border-white/8 pb-3.5 sm:gap-4 sm:pb-5 sm:flex-row sm:items-start sm:justify-between">
+                <h2 className="app-heading text-[1.2rem] font-semibold leading-[1.02] text-white sm:text-3xl">Steps</h2>
+                {isEditMode ? (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setEditingStep(null);
+                      setStepDialogOpen(true);
+                    }}
+                    className="sm:self-start"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add step
+                  </Button>
+                ) : null}
               </div>
-              <Button
-                onClick={() => {
-                  setEditingStep(null);
-                  setStepDialogOpen(true);
-                }}
-              >
-                <Plus className="h-4 w-4" />
-                Add step
-              </Button>
-            </div>
-            <StepList
-              steps={sortedSteps}
-              onAdd={() => {
-                setEditingStep(null);
-                setStepDialogOpen(true);
-              }}
-              onEdit={(step) => {
-                setEditingStep(step);
-                setStepDialogOpen(true);
-              }}
-              onComplete={async (step) => {
-                await completeStep.mutateAsync(step.id);
-              }}
-              onStartTimer={async (step) => {
-                await startStepTimer.mutateAsync(step.id);
-              }}
-              onReset={async (step) => {
-                await resetStep.mutateAsync(step.id);
-              }}
-              onReorder={async (step, position) => {
-                await updateStep.mutateAsync({
-                  stepId: step.id,
-                  input: { position }
-                });
-              }}
-            />
-          </section>
+              <div className="mt-3.5 rounded-[18px] bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.02))] px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_24px_rgba(0,0,0,0.14)] sm:mt-5 sm:px-4 sm:py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[9px] uppercase tracking-[0.14em] text-[color:var(--text-secondary)] sm:text-[10px]">Progress</p>
+                    <p className="mt-1 text-[11px] font-medium text-[color:var(--accent-strong)] sm:text-xs">
+                      {completedStepCount} / {sortedSteps.length} done
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-[10px] font-medium uppercase tracking-[0.12em] text-[color:var(--text-secondary)] sm:text-[11px]">
+                    {stepProgressPercent}%
+                  </div>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                  <div
+                    className="h-full rounded-full bg-[linear-gradient(90deg,rgba(191,209,171,0.95),rgba(127,155,113,0.9))] transition-[width] duration-300 ease-out"
+                    style={{ width: `${stepProgressPercent}%` }}
+                  />
+                </div>
+              </div>
+              <div className="mt-3 sm:mt-5">
+                <StepList
+                  editMode={isEditMode}
+                  steps={sortedSteps}
+                  onAdd={() => {
+                    setEditingStep(null);
+                    setStepDialogOpen(true);
+                  }}
+                  onEdit={(step) => {
+                    setEditingStep(step);
+                    setStepDialogOpen(true);
+                  }}
+                  onComplete={async (step) => {
+                    await completeStep.mutateAsync(step.id);
+                  }}
+                  onStartTimer={async (step) => {
+                    await startStepTimer.mutateAsync(step.id);
+                  }}
+                  onReset={async (step) => {
+                    await resetStep.mutateAsync(step.id);
+                  }}
+                  onReorder={async (step, position) => {
+                    await updateStep.mutateAsync({
+                      stepId: step.id,
+                      input: { position }
+                    });
+                  }}
+                />
+              </div>
+            </section>
+          </div>
         </div>
       ) : (
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-sm text-slate-300">Loading recipe...</div>
+        <div className="rounded-[30px] border border-white/10 bg-white/5 p-8 text-sm text-[color:var(--text-secondary)]">Loading recipe...</div>
       )}
 
       <RecipeDialog

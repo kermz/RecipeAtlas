@@ -65,11 +65,11 @@ export function IngredientDialog({
     <Dialog
       open={open}
       title={ingredient ? 'Edit ingredient' : 'Add ingredient'}
-      description={`Build the ingredient list for ${recipeTitle}, including units that can be converted per ingredient.`}
+      description={`Build the ingredient list for ${recipeTitle}, with clean quantities, units, and optional notes.`}
       onClose={onClose}
     >
       <form
-        className="space-y-4"
+        className="space-y-5"
         onSubmit={form.handleSubmit(async (values) => {
           await onSubmit(values);
           onClose();
@@ -83,10 +83,7 @@ export function IngredientDialog({
             <Input type="number" min={0.01} step="any" {...form.register('quantity')} />
           </Field>
           <Field label="Unit" className="sm:col-span-2" error={form.formState.errors.unit?.message}>
-            <select
-              className="h-11 w-full rounded-xl border border-white/12 bg-slate-950/50 px-4 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-sky-300/70 focus:ring-2 focus:ring-sky-300/30"
-              {...form.register('unit')}
-            >
+            <select className="ui-select w-full" {...form.register('unit')}>
               {ingredientUnits.map((unit) => (
                 <option key={unit.value} value={unit.value}>
                   {unit.label}
@@ -98,8 +95,8 @@ export function IngredientDialog({
         <Field label="Notes" hint="Optional prep notes, like sifted or room temperature." error={form.formState.errors.notes?.message}>
           <Textarea placeholder="Finely grated, lightly packed, chilled..." {...form.register('notes')} />
         </Field>
-        <div className="flex items-center justify-between gap-3 pt-2">
-          <div>
+        <div className="flex flex-col-reverse gap-3 border-t border-white/8 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center">
             {ingredient && onDelete ? (
               <Button
                 variant="ghost"
@@ -113,7 +110,7 @@ export function IngredientDialog({
               </Button>
             ) : null}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button variant="secondary" type="button" onClick={onClose}>
               Cancel
             </Button>

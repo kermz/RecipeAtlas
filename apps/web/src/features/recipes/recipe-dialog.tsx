@@ -52,11 +52,11 @@ export function RecipeDialog({ open, recipe, onClose, onSubmit, onDelete }: Reci
     <Dialog
       open={open}
       title={recipe ? 'Edit recipe' : 'Create a recipe'}
-      description="Create a recipe card with an optional description, then add ingredients and ordered steps."
+      description="Create a recipe with a clear title and optional context, then move into ingredients and steps."
       onClose={onClose}
     >
       <form
-        className="space-y-4"
+        className="space-y-5"
         onSubmit={form.handleSubmit(async (values) => {
           await onSubmit(values);
           onClose();
@@ -68,8 +68,8 @@ export function RecipeDialog({ open, recipe, onClose, onSubmit, onDelete }: Reci
         <Field label="Description" hint="Optional short context for the recipe." error={form.formState.errors.description?.message}>
           <Textarea placeholder="A light tomato sauce with fresh basil." {...form.register('description')} />
         </Field>
-        <div className="flex items-center justify-between gap-3 pt-2">
-          <div>
+        <div className="flex flex-col-reverse gap-3 border-t border-white/8 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center">
             {recipe && onDelete ? (
               <Button
                 variant="ghost"
@@ -83,11 +83,11 @@ export function RecipeDialog({ open, recipe, onClose, onSubmit, onDelete }: Reci
               </Button>
             ) : null}
           </div>
-          <div className="flex items-center gap-3">
-          <Button variant="secondary" type="button" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit">{recipe ? 'Save recipe' : 'Create recipe'}</Button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button variant="secondary" type="button" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit">{recipe ? 'Save recipe' : 'Create recipe'}</Button>
           </div>
         </div>
       </form>

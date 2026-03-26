@@ -13,11 +13,11 @@ export function Field({ label, hint, error, action, className, children }: Field
   return (
     <label className={cn('block space-y-2', className)}>
       <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-medium text-slate-100">{label}</span>
+        <span className="text-sm font-medium text-white">{label}</span>
         {action ? <span>{action}</span> : null}
       </div>
       {children}
-      {hint ? <p className="text-xs leading-5 text-slate-400">{hint}</p> : null}
+      {hint ? <p className="text-xs leading-5 text-[color:var(--text-secondary)]">{hint}</p> : null}
       {error ? <p className="text-xs font-medium text-rose-200">{error}</p> : null}
     </label>
   );

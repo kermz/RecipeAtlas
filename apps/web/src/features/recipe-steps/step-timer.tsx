@@ -55,6 +55,7 @@ export function StepTimer({ durationSeconds, timerStartedAt, completedAt, resetN
       <Button
         size="sm"
         variant="secondary"
+        className="h-8 w-8 min-w-0 px-0 sm:h-9 sm:min-w-[94px] sm:px-3.5"
         onClick={() => {
           if (isRunning) {
             pause();
@@ -69,9 +70,9 @@ export function StepTimer({ durationSeconds, timerStartedAt, completedAt, resetN
         disabled={Boolean(completedAt)}
       >
         {completedAt ? <CheckCircle2 className="h-3.5 w-3.5" /> : isRunning ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-        {completedAt ? 'Done' : isRunning ? 'Pause' : 'Start'}
+        <span className="hidden sm:inline">{completedAt ? 'Done' : isRunning ? 'Pause' : 'Start'}</span>
       </Button>
-      <Badge tone={isComplete ? 'success' : isRunning ? 'accent' : 'neutral'}>
+      <Badge tone={isComplete ? 'success' : isRunning ? 'accent' : 'neutral'} className="px-3 py-2 text-xs tracking-[0.14em]">
         <Clock3 className="mr-1 h-3.5 w-3.5" />
         {formatDuration(secondsLeft)}
       </Badge>

@@ -24,11 +24,11 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Dialog open={open} title={title} description={description} onClose={onClose}>
-      <div className="flex items-center justify-end gap-3">
-        <Button variant="secondary" onClick={onClose}>
+      <div className="flex flex-col-reverse gap-3 border-t border-white/8 pt-4 sm:flex-row sm:items-center sm:justify-end">
+        <Button variant="secondary" onClick={onClose} className="sm:min-w-28">
           Cancel
         </Button>
-        <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm} disabled={loading}>
+        <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm} disabled={loading} className="sm:min-w-32">
           {loading ? 'Working...' : confirmLabel}
         </Button>
       </div>

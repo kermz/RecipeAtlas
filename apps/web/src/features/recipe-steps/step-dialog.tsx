@@ -59,11 +59,11 @@ export function StepDialog({ open, recipeTitle, step, suggestedPosition, onClose
     <Dialog
       open={open}
       title={step ? 'Edit step' : 'Create a new step'}
-      description={`Track an ordered step for ${recipeTitle}. Timers stay local until you mark the step done.`}
+      description={`Track an ordered step for ${recipeTitle}. Timers stay local until the step is completed.`}
       onClose={onClose}
     >
       <form
-        className="space-y-4"
+        className="space-y-5"
         onSubmit={form.handleSubmit(async (values) => {
           await onSubmit(values);
           onClose();
@@ -87,8 +87,8 @@ export function StepDialog({ open, recipeTitle, step, suggestedPosition, onClose
             <Input type="number" min={1} placeholder="300" {...form.register('timerDurationSeconds')} />
           </Field>
         </div>
-        <div className="flex items-center justify-between gap-3 pt-2">
-          <div>
+        <div className="flex flex-col-reverse gap-3 border-t border-white/8 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center">
             {step && onDelete ? (
               <Button
                 variant="ghost"
@@ -102,11 +102,11 @@ export function StepDialog({ open, recipeTitle, step, suggestedPosition, onClose
               </Button>
             ) : null}
           </div>
-          <div className="flex items-center gap-3">
-          <Button variant="secondary" onClick={onClose} type="button">
-            Cancel
-          </Button>
-          <Button type="submit">{step ? 'Save step' : 'Add step'}</Button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button variant="secondary" onClick={onClose} type="button">
+              Cancel
+            </Button>
+            <Button type="submit">{step ? 'Save step' : 'Add step'}</Button>
           </div>
         </div>
       </form>
