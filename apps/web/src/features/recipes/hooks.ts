@@ -1,56 +1,68 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createRecipe, deleteRecipe, getRecipe, listRecipes, updateRecipe } from './api';
+import { useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 import type { RecipeInput } from '../../lib/types';
-
-export const recipeKeys = {
-  all: ['recipes'] as const,
-  list: () => [...recipeKeys.all, 'list'] as const,
-  detail: (recipeId: string) => [...recipeKeys.all, 'detail', recipeId] as const
-};
+import { useConvexMutation } from '../../lib/use-convex-mutation';
 
 export function useRecipes() {
-  return useQuery({
-    queryKey: recipeKeys.list(),
-    queryFn: listRecipes
-  });
+  const data = useQuery(api.recipes.listRecipes);
+
+  return {
+    data,
+    isLoading: data === undefined,
+    isError: false
+  };
 }
 
 export function useRecipe(recipeId: string | undefined) {
-  return useQuery({
-    queryKey: recipeId ? recipeKeys.detail(recipeId) : ['recipes', 'missing'],
-    queryFn: () => getRecipe(recipeId as string),
-    enabled: Boolean(recipeId)
-  });
+  const data = useQuery(api.recipes.getRecipe, recipeId ? { recipeId: recipeId as never } : 'skip');
+
+  return {
+    data: data ?? undefined,
+    isLoading: data === undefined,
+    isError: data === null,
+    isFetching: false
+  };
 }
 
 export function useCreateRecipe() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: RecipeInput) => createRecipe(input),
-    onSuccess: async (recipe) => {
-      await queryClient.invalidateQueries({ queryKey: recipeKeys.list() });
-      await queryClient.invalidateQueries({ queryKey: recipeKeys.detail(recipe.id) });
-    }
-  });
+  return useConvexMutation(api.recipes.createRecipe) as {
+    isPending: boolean;
+    mutateAsync: (input: RecipeInput) => Promise<any>;
+  };
 }
 
 export function useUpdateRecipe(recipeId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: Partial<RecipeInput>) => updateRecipe(recipeId, input),
-    onSuccess: async (recipe) => {
-      await queryClient.invalidateQueries({ queryKey: recipeKeys.list() });
-      await queryClient.invalidateQueries({ queryKey: recipeKeys.detail(recipe.id) });
-    }
-  });
+  const mutation = useConvexMutation(api.recipes.updateRecipe);
+
+  return {
+    ...mutation,
+    mutateAsync: (input: Partial<RecipeInput>) => mutation.mutateAsync({ recipeId, ...input })
+  };
 }
 
 export function useDeleteRecipe() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: deleteRecipe,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: recipeKeys.list() });
-    }
-  });
+  const mutation = useConvexMutation(api.recipes.deleteRecipe);
+
+  return {
+    ...mutation,
+    mutateAsync: (recipeId: string) => mutation.mutateAsync({ recipeId })
+  };
+}
+
+export function useAddRecipeCollaborator(recipeId: string) {
+  const mutation = useConvexMutation(api.recipes.addRecipeCollaborator);
+
+  return {
+    ...mutation,
+    mutateAsync: (email: string) => mutation.mutateAsync({ recipeId, email })
+  };
+}
+
+export function useRemoveRecipeCollaborator(recipeId: string) {
+  const mutation = useConvexMutation(api.recipes.removeRecipeCollaborator);
+
+  return {
+    ...mutation,
+    mutateAsync: (collaboratorId: string) => mutation.mutateAsync({ recipeId, collaboratorId })
+  };
 }

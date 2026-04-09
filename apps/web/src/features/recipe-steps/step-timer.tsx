@@ -6,15 +6,22 @@ import { useCountdownTimer } from './use-countdown-timer';
 import { formatDuration } from './time-format';
 
 type StepTimerProps = {
+  recipeId: string;
+  stepId: string;
   durationSeconds: number | null;
   timerStartedAt: string | null;
   completedAt: string | null;
+  readOnly?: boolean;
   resetNonce: number;
   onStart: () => void;
 };
 
-export function StepTimer({ durationSeconds, timerStartedAt, completedAt, resetNonce, onStart }: StepTimerProps) {
-  const { secondsLeft, isRunning, isComplete, start, pause, stop, reset } = useCountdownTimer(durationSeconds);
+export function StepTimer({ recipeId, stepId, durationSeconds, timerStartedAt, completedAt, readOnly = false, resetNonce, onStart }: StepTimerProps) {
+  const storageKey = durationSeconds ? `recipe-timer:v1:${recipeId}:${stepId}` : undefined;
+  const { secondsLeft, isRunning, isComplete, start, pause, stop, reset } = useCountdownTimer(durationSeconds, {
+    storageKey,
+    autoStartAt: completedAt ? null : timerStartedAt
+  });
   const previousCompletedAtRef = useRef<string | null>(completedAt);
   const previousTimerStartedAtRef = useRef<string | null>(timerStartedAt);
   const previousResetNonceRef = useRef(resetNonce);
@@ -48,6 +55,15 @@ export function StepTimer({ durationSeconds, timerStartedAt, completedAt, resetN
 
   if (!durationSeconds) {
     return null;
+  }
+
+  if (readOnly) {
+    return (
+      <Badge tone={isComplete ? 'success' : isRunning ? 'accent' : 'neutral'} className="px-3 py-2 text-xs tracking-[0.14em]">
+        <Clock3 className="mr-1 h-3.5 w-3.5" />
+        {formatDuration(secondsLeft)}
+      </Badge>
+    );
   }
 
   return (

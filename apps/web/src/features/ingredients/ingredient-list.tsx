@@ -34,6 +34,7 @@ import {
 type IngredientListProps = {
   editMode: boolean;
   ingredients: RecipeIngredient[];
+  canTogglePurchased?: boolean;
   onAdd: () => void;
   onEdit: (ingredient: RecipeIngredient) => void;
   onTogglePurchased: (ingredient: RecipeIngredient) => Promise<void> | void;
@@ -171,6 +172,7 @@ function UnitPicker({
 function SortableIngredientRow({
   editMode,
   ingredient,
+  canTogglePurchased,
   displayUnit,
   onDisplayUnitChange,
   onEdit,
@@ -178,6 +180,7 @@ function SortableIngredientRow({
 }: {
   editMode: boolean;
   ingredient: RecipeIngredient;
+  canTogglePurchased: boolean;
   displayUnit: IngredientUnit;
   onDisplayUnitChange: (ingredientId: string, unit: IngredientUnit) => void;
   onEdit: (ingredient: RecipeIngredient) => void;
@@ -276,6 +279,7 @@ function SortableIngredientRow({
             type="button"
             aria-pressed={ingredient.purchased}
             aria-label={`Mark ${ingredient.name} as ${ingredient.purchased ? 'missing' : 'bought'}`}
+            disabled={!canTogglePurchased}
             className={cn(
               'inline-flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[rgba(191,209,171,0.72)] focus:ring-offset-2 focus:ring-offset-transparent sm:h-10 sm:w-10 sm:rounded-2xl',
               ingredient.purchased
@@ -283,6 +287,10 @@ function SortableIngredientRow({
                 : 'border-[rgba(191,209,171,0.18)] bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))] text-[color:var(--accent-strong)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:border-[rgba(191,209,171,0.3)] hover:bg-white/10 hover:text-[color:var(--accent-strong)]'
             )}
             onClick={() => {
+              if (!canTogglePurchased) {
+                return;
+              }
+
               void onTogglePurchased(ingredient);
             }}
           >
@@ -294,7 +302,7 @@ function SortableIngredientRow({
   );
 }
 
-export function IngredientList({ editMode, ingredients, onAdd, onEdit, onTogglePurchased, onReorder }: IngredientListProps) {
+export function IngredientList({ editMode, ingredients, canTogglePurchased = true, onAdd, onEdit, onTogglePurchased, onReorder }: IngredientListProps) {
   const [displayUnits, setDisplayUnits] = useState<Record<string, IngredientUnit>>({});
   const [orderedIngredients, setOrderedIngredients] = useState(ingredients);
 
@@ -336,7 +344,9 @@ export function IngredientList({ editMode, ingredients, onAdd, onEdit, onToggleP
         description={
           editMode
             ? 'Add the ingredient list for this recipe so you can see quantities, units, and convert each ingredient on its own when needed.'
-            : 'Turn on edit mode when you want to build out the ingredient list for this recipe.'
+            : canTogglePurchased
+              ? 'Turn on edit mode when you want to build out the ingredient list for this recipe.'
+              : 'This shared recipe does not have any ingredients yet.'
         }
         action={editMode ? (
           <Button onClick={onAdd}>
@@ -390,6 +400,7 @@ export function IngredientList({ editMode, ingredients, onAdd, onEdit, onToggleP
               key={ingredient.id}
               editMode={editMode}
               ingredient={ingredient}
+              canTogglePurchased={canTogglePurchased}
               displayUnit={normalizedDisplayUnits[ingredient.id]}
               onDisplayUnitChange={(ingredientId, unit) => {
                 setDisplayUnits((current) => ({

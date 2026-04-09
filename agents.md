@@ -2,13 +2,9 @@
 
 ## Purpose
 
-RecipeAtlas is a Bun monorepo for a recipe-management app with:
+RecipeAtlas is now a Bun monorepo centered on a single React + Vite + Tailwind app in `apps/web`, backed by Convex functions colocated in `apps/web/convex`.
 
-- a Fastify + Prisma API in `apps/api`
-- a React + Vite + Tailwind web app in `apps/web`
-- PostgreSQL for persistence
-
-The main user flows are:
+Primary user flows:
 
 - create, edit, list, and delete recipes
 - add, edit, delete, and reorder ingredients
@@ -19,143 +15,115 @@ The main user flows are:
 
 ### Root
 
-- `package.json`: workspace scripts for dev, tests, and Docker
-- `docker-compose.yml`: local multi-container setup for `db`, `api`, and `web`
-- `dev.sh`: starts API and web together for local development
-- `.env.example`: Docker-oriented environment example
-- `README.md`: user-facing setup instructions
-
-### API (`apps/api`)
-
-- `src/app.ts`: Fastify app creation, CORS, health endpoint, route registration, error handling
-- `src/server.ts`: boots the API using validated env vars
-- `src/routes/recipes.ts`: recipe CRUD plus nested create endpoints for steps and ingredients
-- `src/routes/steps.ts`: step update, delete, complete, reset, and timer-start endpoints
-- `src/routes/ingredients.ts`: ingredient update and delete endpoints
-- `src/schemas/recipes.ts`: Zod request validation for recipes, steps, and ingredients
-- `src/utils/step-order.ts`: shared position clamping helper
-- `prisma/schema.prisma`: database schema for recipes, steps, and ingredients
-- `test/*.test.ts`: route-level API tests using a Prisma test double
+- `package.json`: workspace scripts for web + Convex dev and tests
+- `dev.sh`: starts Convex dev and Vite together
+- `.env.example`: example `VITE_CONVEX_URL`
+- `README.md`: setup and local development instructions
 
 ### Web (`apps/web`)
 
-- `src/main.tsx`: React entry point with React Query provider
-- `src/router.tsx`: app routes
-- `src/components`: shared layout and UI building blocks
-- `src/pages/recipes-page.tsx`: recipe listing and recipe creation flow
-- `src/pages/recipe-detail-page.tsx`: recipe detail orchestration for editing, ingredients, steps, resets, and deletes
-- `src/features/recipes`: API functions, React Query hooks, recipe dialog, recipe list
-- `src/features/ingredients`: ingredient API/hooks, dialog, sortable list, unit conversion helpers
-- `src/features/recipe-steps`: step API/hooks, dialog, sortable list, countdown timer logic, time formatting
-- `src/test`: MSW-backed frontend test setup
+- `src/main.tsx`: React entry point with `ConvexProvider`
+- `src/router.tsx`: browser routes
+- `src/pages/recipes-page.tsx`: recipe list and create flow
+- `src/pages/recipe-detail-page.tsx`: recipe detail orchestration for edits, ingredients, steps, resets, and deletes
+- `src/features`: UI modules and Convex-backed hooks
+- `src/test`: page and hook tests using local mocked feature hooks
+
+### Convex (`apps/web/convex`)
+
+- `schema.ts`: Convex schema for recipes, ingredients, and steps
+- `recipes.ts`: public queries and mutations used by the web app
+- `ordering.ts`: shared position/reindex helpers
+- `validation.ts`: backend input validation and normalization
+- `_generated/api.ts`: generated-compatible API surface committed for local type imports
 
 ## Architecture Notes
 
 ### Backend
 
-The active backend architecture is route-centric. Route handlers talk directly to Prisma, and ordering logic is handled inside Prisma transactions so ingredient and step positions stay contiguous after inserts, moves, and deletes.
+The backend is now native Convex:
 
-Current API shape:
+- `recipes` table stores recipe metadata plus `createdAt` and `updatedAt`
+- `recipeIngredients` stores normalized ingredient rows with contiguous `position`
+- `recipeSteps` stores normalized step rows with contiguous `position`, `timerStartedAt`, and `completedAt`
 
-- `GET /health`
-- `GET /recipes`
-- `POST /recipes`
-- `GET /recipes/:id`
-- `PATCH /recipes/:id`
-- `DELETE /recipes/:id`
-- `POST /recipes/:recipeId/steps`
-- `POST /recipes/:recipeId/ingredients`
-- `PATCH /steps/:id`
-- `DELETE /steps/:id`
-- `POST /steps/:id/complete`
-- `POST /steps/:id/start-timer`
-- `POST /steps/:id/reset`
-- `PATCH /ingredients/:id`
-- `DELETE /ingredients/:id`
+Active public functions live in `apps/web/convex/recipes.ts`:
 
-Data model:
+- `listRecipes`
+- `getRecipe`
+- `createRecipe`
+- `updateRecipe`
+- `deleteRecipe`
+- `createIngredient`
+- `updateIngredient`
+- `deleteIngredient`
+- `resetIngredients`
+- `createStep`
+- `updateStep`
+- `deleteStep`
+- `startStepTimer`
+- `completeStep`
+- `resetStep`
+- `resetAllSteps`
 
-- `Recipe`: title, optional description, timestamps
-- `RecipeStep`: ordered by `position`, optional instructions, optional timer duration, optional `timerStartedAt`, optional `completedAt`
-- `RecipeIngredient`: ordered by `position`, quantity, unit, optional notes
-
-Validation rules are enforced with Zod before Prisma is called.
+Ordering semantics are mutation-local and must keep ingredient and step positions contiguous after inserts, moves, and deletes.
 
 ### Frontend
 
-The frontend is feature-oriented and uses React Query for server state.
+The frontend uses Convex React directly:
 
-- page components orchestrate dialogs and user flows
-- feature `api.ts` files define HTTP calls
-- feature `hooks.ts` files wrap those calls with React Query
-- drag-and-drop reordering uses `@dnd-kit`
-- step countdown timers are local UI state, while `timerStartedAt` and `completedAt` are persisted via the API
+- `useQuery` drives reactive reads
+- `useMutation` is wrapped in local helpers to preserve simple `mutateAsync` + `isPending` ergonomics
+- manual refresh is intentionally gone because Convex reactivity keeps the UI live
 
-The detail page is the highest-leverage file when changing recipe behavior because it coordinates nearly all step and ingredient mutations.
+Step countdowns remain local browser timers. Convex persists only timestamps for start and completion.
 
 ## Runtime and Tooling
 
 ### Local commands
 
-- `bun run dev`: run web and API together
-- `bun run dev:api`: run only the API
+- `bun run dev`: run Convex dev and Vite together
 - `bun run dev:web`: run only the web app
-- `bun run test:api`: run API tests
-- `bun run test:web`: run web tests
-- `bun run docker:up`: run the full stack in Docker
+- `bun run dev:convex`: run only Convex dev
+- `bun run test`: run the web + Convex test suite
+- `bun run test:web`: run the same test suite from the root
 
-### API environment
+### Environment
 
-Expected variables in `apps/api/.env`:
+Expected variable in `apps/web/.env.local`:
 
-- `DATABASE_URL`
-- `PORT`
-- `HOST`
-
-### Web networking
-
-In local development, Vite proxies `/api` to `http://127.0.0.1:3000`.
-
-In Docker, nginx proxies `/api/` to the `api` service.
+- `VITE_CONVEX_URL`
 
 ## Testing Strategy
 
-### API tests
+### Convex tests
 
-API tests build the real Fastify app and pass in a Prisma-shaped in-memory double from `apps/api/test/helpers.ts`. That means route behavior, validation, and ordering logic are covered without needing a live database.
+Convex tests call the actual query and mutation handlers with an in-memory Convex-style DB double from `apps/web/convex/test-helpers.ts`.
 
 ### Web tests
 
-Web tests use:
-
-- `vitest`
-- `@testing-library/react`
-- `msw`
-
-The frontend test store in `src/test/handlers.ts` mimics API behavior for recipe, ingredient, and step flows.
-
-## Important Review Notes
-
-- The current API no longer uses the older repository/service abstraction under `apps/api/src/lib` (`recipe-service.ts`, `in-memory-repository.ts`, `prisma-repository.ts`, and related types/errors). Those files look like an earlier architecture and are currently dead code.
-- Route tests are the main source of backend truth right now, not the unused service layer.
-- The frontend sorts recipe cards by `updatedAt` client-side even though the API returns recipes ordered by `createdAt desc`.
-- Step countdowns are intentionally local browser timers. The API stores when a timer started, but not the remaining duration. UI pause/resume is local-only.
+Web page tests no longer use REST or MSW. They mock the feature hook modules with a local in-memory recipe store under `apps/web/src/test/mock-recipe-store.ts`.
 
 ## Safe Change Guidance
 
-- If you change ordering semantics, update both the API transactions and the route tests.
-- If you change API payloads, update `apps/web/src/lib/types.ts`, the feature `api.ts` modules, and MSW handlers together.
+- If you change ordering semantics, update both `apps/web/convex/ordering.ts` tests and the Convex function tests.
+- If you change payload shapes, update `apps/web/src/lib/types.ts`, Convex serializers in `apps/web/convex/recipes.ts`, and the mocked test store together.
 - If you change timer behavior, review both `step-timer.tsx` and `use-countdown-timer.ts`.
-- If you remove the unused backend service/repository files, do it as a focused cleanup so it stays easy to review.
 
 ## Suggested First Files To Read
 
 - `README.md`
-- `apps/api/src/app.ts`
-- `apps/api/src/routes/recipes.ts`
-- `apps/api/src/routes/steps.ts`
-- `apps/api/prisma/schema.prisma`
+- `apps/web/convex/schema.ts`
+- `apps/web/convex/recipes.ts`
 - `apps/web/src/pages/recipes-page.tsx`
 - `apps/web/src/pages/recipe-detail-page.tsx`
 - `apps/web/src/features/ingredients/ingredient-list.tsx`
 - `apps/web/src/features/recipe-steps/step-list.tsx`
+
+<!-- convex-ai-start -->
+This project uses [Convex](https://convex.dev) as its backend.
+
+When working on Convex code, **always read `convex/_generated/ai/guidelines.md` first** for important guidelines on how to correctly use Convex APIs and patterns. The file contains rules that override what you may have learned about Convex from training data.
+
+Convex agent skills for common tasks can be installed by running `npx convex ai-files install`.
+<!-- convex-ai-end -->

@@ -8,6 +8,5 @@ coverage
 apps/*/node_modules
 apps/*/dist
 apps/*/coverage
-apps/api/generated
-apps/api/prisma/dev.db
-postgres-data
+apps/web/.convex
+apps/*/tsconfig.tsbuildinfo

@@ -1,7 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderApp } from '../test/utils';
+import * as authHooksMock from '../test/mocks/auth-hooks';
+import * as ingredientHooksMock from '../test/mocks/ingredients-hooks';
+import * as recipeStepHooksMock from '../test/mocks/recipe-steps-hooks';
+import * as recipeHooksMock from '../test/mocks/recipes-hooks';
+
+vi.mock('../features/auth/hooks', () => authHooksMock);
+vi.mock('../features/recipes/hooks', () => recipeHooksMock);
+vi.mock('../features/ingredients/hooks', () => ingredientHooksMock);
+vi.mock('../features/recipe-steps/hooks', () => recipeStepHooksMock);
 
 describe('RecipesPage', () => {
   it('renders recipes and creates a new one', async () => {

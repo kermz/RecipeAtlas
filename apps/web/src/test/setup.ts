@@ -1,15 +1,8 @@
 import '@testing-library/jest-dom/vitest';
-import { afterAll, afterEach, beforeAll } from 'vitest';
-import { server } from './server';
-import { queryClient } from '../lib/query-client';
-import { resetStore } from './handlers';
-
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+import { afterEach } from 'vitest';
+import { resetMockRecipeStore } from './mock-recipe-store';
 
 afterEach(() => {
-  server.resetHandlers();
-  resetStore();
-  queryClient.clear();
+  window.localStorage.clear();
+  resetMockRecipeStore();
 });
-
-afterAll(() => server.close());

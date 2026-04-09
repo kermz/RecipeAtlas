@@ -4,7 +4,7 @@ import { NotFoundPage } from './pages/not-found-page';
 import { RecipeDetailPage } from './pages/recipe-detail-page';
 import { RecipesPage } from './pages/recipes-page';
 
-export function createAppRouter() {
+export function createAppRouter(): ReturnType<typeof createBrowserRouter> {
   return createBrowserRouter([
     {
       element: <AppShell />,

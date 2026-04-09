@@ -25,6 +25,7 @@ import { StepCard } from './step-card';
 
 type StepListProps = {
   editMode: boolean;
+  canInteract?: boolean;
   steps: RecipeStep[];
   onAdd: () => void;
   onEdit: (step: RecipeStep) => void;
@@ -36,6 +37,7 @@ type StepListProps = {
 
 function SortableStepCard({
   editMode,
+  canInteract,
   step,
   onEdit,
   onComplete,
@@ -43,6 +45,7 @@ function SortableStepCard({
   onStartTimer
 }: {
   editMode: boolean;
+  canInteract: boolean;
   step: RecipeStep;
   onEdit: (step: RecipeStep) => void;
   onComplete: (step: RecipeStep) => void;
@@ -63,6 +66,7 @@ function SortableStepCard({
     >
       <StepCard
         editMode={editMode}
+        canInteract={canInteract}
         step={step}
         onEdit={onEdit}
         onComplete={onComplete}
@@ -76,7 +80,7 @@ function SortableStepCard({
   );
 }
 
-export function StepList({ editMode, steps, onAdd, onEdit, onComplete, onReset, onStartTimer, onReorder }: StepListProps) {
+export function StepList({ editMode, canInteract = true, steps, onAdd, onEdit, onComplete, onReset, onStartTimer, onReorder }: StepListProps) {
   const [orderedSteps, setOrderedSteps] = useState(steps);
 
   useEffect(() => {
@@ -108,7 +112,9 @@ export function StepList({ editMode, steps, onAdd, onEdit, onComplete, onReset, 
         description={
           editMode
             ? 'Add ordered steps to track the process, attach timers, and mark completion timestamps when each step is finished.'
-            : 'Turn on edit mode when you want to add or rearrange the cooking flow for this recipe.'
+            : canInteract
+              ? 'Turn on edit mode when you want to add or rearrange the cooking flow for this recipe.'
+              : 'This shared recipe does not have any steps yet.'
         }
         action={editMode ? (
           <Button onClick={onAdd}>
@@ -161,6 +167,7 @@ export function StepList({ editMode, steps, onAdd, onEdit, onComplete, onReset, 
             <SortableStepCard
               key={step.id}
               editMode={editMode}
+              canInteract={canInteract}
               step={step}
               onEdit={onEdit}
               onComplete={onComplete}

@@ -48,7 +48,7 @@ export function convertIngredientQuantity(quantity: number, from: IngredientUnit
     return quantity;
   }
 
-  return convert(quantity).from(from).to(to);
+  return convert(quantity).from(from as never).to(to as never);
 }
 
 export function formatIngredientQuantity(quantity: number) {

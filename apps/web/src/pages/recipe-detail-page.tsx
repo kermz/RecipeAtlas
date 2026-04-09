@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, Pencil, Plus, RefreshCcw, RotateCcw, Settings2, ShoppingBasket } from 'lucide-react';
+import { ArrowLeft, Check, Globe2, Lock, Pencil, Plus, RotateCcw, Settings2, ShoppingBasket } from 'lucide-react';
 import { CelebrationConfetti } from '../components/celebration-confetti';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -10,10 +10,11 @@ import { IngredientDialog, type IngredientFormValues } from '../features/ingredi
 import { IngredientList } from '../features/ingredients/ingredient-list';
 import { useCreateIngredient, useDeleteIngredient, useResetIngredients, useUpdateIngredient } from '../features/ingredients/hooks';
 import { RecipeDialog, type RecipeFormValues } from '../features/recipes/recipe-dialog';
+import { RecipeSharingPanel } from '../features/recipes/recipe-sharing-panel';
 import { formatRecipeTotalTime } from '../features/recipes/total-time';
 import { StepDialog, type StepFormValues } from '../features/recipe-steps/step-dialog';
 import { StepList } from '../features/recipe-steps/step-list';
-import { useDeleteRecipe, useRecipe, useUpdateRecipe } from '../features/recipes/hooks';
+import { useAddRecipeCollaborator, useDeleteRecipe, useRecipe, useRemoveRecipeCollaborator, useUpdateRecipe } from '../features/recipes/hooks';
 import { useCompleteStep, useCreateStep, useDeleteStep, useResetAllSteps, useResetStep, useStartStepTimer, useUpdateStep } from '../features/recipe-steps/hooks';
 import type { RecipeIngredient, RecipeStep } from '../lib/types';
 
@@ -47,6 +48,8 @@ export function RecipeDetailPage() {
   const startStepTimer = useStartStepTimer(recipeId ?? '');
   const resetStep = useResetStep(recipeId ?? '');
   const resetAllSteps = useResetAllSteps(recipeId ?? '');
+  const addCollaborator = useAddRecipeCollaborator(recipeId ?? '');
+  const removeCollaborator = useRemoveRecipeCollaborator(recipeId ?? '');
 
   const sortedIngredients = useMemo(
     () => [...(recipe?.ingredients ?? [])].sort((left, right) => left.position - right.position),
@@ -63,6 +66,8 @@ export function RecipeDetailPage() {
   const nextPosition = sortedSteps.length > 0 ? sortedSteps[sortedSteps.length - 1].position + 1 : 1;
   const resettableStepIds = sortedSteps.filter((step) => step.completedAt || step.timerStartedAt).map((step) => step.id);
   const hasPurchasedIngredients = sortedIngredients.some((ingredient) => ingredient.purchased);
+  const canEdit = Boolean(recipe?.canEdit);
+  const canManageRecipe = Boolean(recipe?.isOwner);
 
   useEffect(() => {
     const previousProgress = previousProgressRef.current;
@@ -88,6 +93,12 @@ export function RecipeDetailPage() {
     };
   }, [activeConfettiBurst]);
 
+  useEffect(() => {
+    if (!canEdit && isEditMode) {
+      setIsEditMode(false);
+    }
+  }, [canEdit, isEditMode]);
+
   if (!recipeId) {
     return null;
   }
@@ -102,7 +113,7 @@ export function RecipeDetailPage() {
           </Link>
         </Button>
         <div className="rounded-2xl border border-rose-300/20 bg-rose-400/10 p-4 text-sm text-rose-100">
-          Could not load this recipe. It may have been removed or the API is unreachable.
+          Could not load this recipe. It may be private, removed, or the API may be unreachable.
         </div>
       </div>
     );
@@ -111,7 +122,8 @@ export function RecipeDetailPage() {
   const submitRecipe = async (values: RecipeFormValues) => {
     await updateRecipe.mutateAsync({
       title: values.title,
-      description: values.description?.trim() ? values.description.trim() : null
+      description: values.description?.trim() ? values.description.trim() : null,
+      visibility: values.visibility
     });
   };
 
@@ -165,42 +177,44 @@ export function RecipeDetailPage() {
           </Link>
         </Button>
         <div className="flex flex-wrap gap-1.5 sm:gap-2">
-          <Button size="sm" variant="secondary" onClick={() => recipeQuery.refetch()}>
-            <RefreshCcw className="h-4 w-4" />
-            Refresh
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={resettableStepIds.length === 0 || resetAllSteps.isPending}
-            onClick={async () => {
-              if (resettableStepIds.length === 0) {
-                return;
-              }
+          {canEdit ? (
+            <>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={resettableStepIds.length === 0 || resetAllSteps.isPending}
+                onClick={async () => {
+                  if (resettableStepIds.length === 0) {
+                    return;
+                  }
 
-              await resetAllSteps.mutateAsync(resettableStepIds);
-            }}
-          >
-            <RotateCcw className="h-4 w-4" />
-            Reset all steps
-          </Button>
-          {isEditMode ? (
-            <Button size="sm" variant="secondary" onClick={() => setRecipeDialogOpen(true)}>
-              <Settings2 className="h-4 w-4" />
-              Edit recipe
-            </Button>
-          ) : null}
-          <Button
-            size="sm"
-            variant={isEditMode ? 'primary' : 'secondary'}
-            className={isEditMode ? 'ml-auto' : undefined}
-            onClick={() => {
-              setIsEditMode((current) => !current);
-            }}
-          >
-            {isEditMode ? <Check className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
-            {isEditMode ? 'Done editing' : 'Edit mode'}
-          </Button>
+                  await resetAllSteps.mutateAsync();
+                }}
+              >
+                <RotateCcw className="h-4 w-4" />
+                Reset all steps
+              </Button>
+              {canManageRecipe && isEditMode ? (
+                <Button size="sm" variant="secondary" onClick={() => setRecipeDialogOpen(true)}>
+                  <Settings2 className="h-4 w-4" />
+                  Edit recipe
+                </Button>
+              ) : null}
+              <Button
+                size="sm"
+                variant={isEditMode ? 'primary' : 'secondary'}
+                className={isEditMode ? 'ml-auto' : undefined}
+                onClick={() => {
+                  setIsEditMode((current) => !current);
+                }}
+              >
+                {isEditMode ? <Check className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+                {isEditMode ? 'Done editing' : 'Edit mode'}
+              </Button>
+            </>
+          ) : (
+            <Badge tone="neutral">Read only</Badge>
+          )}
         </div>
       </div>
 
@@ -210,22 +224,51 @@ export function RecipeDetailPage() {
         description={recipe?.description ?? 'The recipe description will appear here once loaded.'}
         action={
           <div className="flex flex-wrap items-center gap-2 xl:max-w-md xl:justify-end">
+            <Badge tone={recipe?.visibility === 'public' ? 'accent' : 'neutral'}>
+              {recipe?.visibility === 'public' ? <Globe2 className="mr-1 h-3.5 w-3.5" /> : <Lock className="mr-1 h-3.5 w-3.5" />}
+              {recipe?.visibility ?? 'private'}
+            </Badge>
+            <Badge tone={recipe?.isOwner ? 'success' : recipe?.isCollaborator ? 'accent' : 'neutral'}>
+              {recipe?.isOwner ? 'Your recipe' : recipe?.isCollaborator ? 'Shared with you' : `By ${recipe?.ownerName ?? 'Unknown'}`}
+            </Badge>
+            <Badge tone="accent">{recipe?.collaboratorCount ?? 0} editors</Badge>
             <Badge tone="accent">{recipe?.ingredients.length ?? 0} ingredients</Badge>
             <Badge tone="accent">{recipe?.steps.length ?? 0} steps</Badge>
             <Badge tone="accent">{recipe ? formatRecipeTotalTime(recipe) : 'No timers'}</Badge>
-            {recipeQuery.isFetching ? <Badge tone="neutral">Syncing...</Badge> : null}
           </div>
         }
       />
 
       {recipe ? (
         <div className="space-y-6">
+          {recipe.isCollaborator ? (
+            <div className="rounded-[24px] border border-[rgba(191,209,171,0.18)] bg-[rgba(127,155,113,0.12)] px-4 py-3 text-sm text-[color:var(--text-primary)]">
+              This recipe is shared with you as an editor by {recipe.ownerName}. You can update ingredients, steps, timers, and completion progress here, while only the owner can change visibility or sharing access.
+            </div>
+          ) : !recipe.canEdit ? (
+            <div className="rounded-[24px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+              This recipe is shared publicly by {recipe.ownerName}. You can browse ingredients and steps here, but only invited editors can change progress, timers, and recipe contents.
+            </div>
+          ) : null}
+          {canManageRecipe && isEditMode ? (
+            <RecipeSharingPanel
+              collaborators={recipe.collaborators ?? []}
+              isAdding={addCollaborator.isPending}
+              isRemoving={removeCollaborator.isPending}
+              onAdd={async (email) => {
+                await addCollaborator.mutateAsync(email);
+              }}
+              onRemove={async (collaboratorId) => {
+                await removeCollaborator.mutateAsync(collaboratorId);
+              }}
+            />
+          ) : null}
           <div className="grid gap-6 xl:grid-cols-[minmax(360px,0.82fr)_minmax(0,1.5fr)]">
             <section className="rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-2.5 pt-3.5 pb-2.5 shadow-[0_24px_70px_rgba(0,0,0,0.18)] sm:rounded-[30px] sm:p-6">
               <div className="flex items-center justify-between gap-2 border-b border-white/8 px-1 pb-3.5 sm:px-0 sm:pb-5">
                 <h2 className="app-heading min-w-0 text-[1.2rem] font-semibold leading-[1.02] text-white sm:text-3xl">Ingredients</h2>
                 <div className="flex shrink-0 items-center gap-2">
-                  {hasPurchasedIngredients ? (
+                  {canEdit && hasPurchasedIngredients ? (
                     <Button
                       size="sm"
                       variant="secondary"
@@ -238,7 +281,7 @@ export function RecipeDetailPage() {
                       Reset
                     </Button>
                   ) : null}
-                  {isEditMode ? (
+                  {canEdit && isEditMode ? (
                     <Button
                       size="sm"
                       onClick={() => {
@@ -256,6 +299,7 @@ export function RecipeDetailPage() {
                 <IngredientList
                   editMode={isEditMode}
                   ingredients={sortedIngredients}
+                  canTogglePurchased={canEdit}
                   onAdd={() => {
                     setEditingIngredient(null);
                     setIngredientDialogOpen(true);
@@ -283,7 +327,7 @@ export function RecipeDetailPage() {
             <section className="rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-2.5 pt-3.5 pb-2.5 shadow-[0_24px_70px_rgba(0,0,0,0.18)] sm:rounded-[30px] sm:p-6">
               <div className="flex flex-col gap-3 border-b border-white/8 pb-3.5 sm:gap-4 sm:pb-5 sm:flex-row sm:items-start sm:justify-between">
                 <h2 className="app-heading text-[1.2rem] font-semibold leading-[1.02] text-white sm:text-3xl">Steps</h2>
-                {isEditMode ? (
+                {canEdit && isEditMode ? (
                   <Button
                     size="sm"
                     onClick={() => {
@@ -319,6 +363,7 @@ export function RecipeDetailPage() {
               <div className="mt-3 sm:mt-5">
                 <StepList
                   editMode={isEditMode}
+                  canInteract={canEdit}
                   steps={sortedSteps}
                   onAdd={() => {
                     setEditingStep(null);
@@ -357,9 +402,9 @@ export function RecipeDetailPage() {
         recipe={recipe ?? null}
         onClose={() => setRecipeDialogOpen(false)}
         onSubmit={submitRecipe}
-        onDelete={() => {
+        onDelete={canManageRecipe ? () => {
           setDeletingRecipe(true);
-        }}
+        } : undefined}
       />
 
       <IngredientDialog

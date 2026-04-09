@@ -1,27 +1,28 @@
 # RecipeAtlas
 
-Vibe-coded recipe workspace for creating ingredients, drag-and-drop steps, countdown timers, and completion tracking in one place. Built with React, Bun, Fastify, PostgreSQL, and Tailwind so recipes stay easy to manage while cooking without losing your flow.
+Vibe-coded recipe workspace for creating ingredients, drag-and-drop steps, countdown timers, and completion tracking in one place. Built with React, Bun, Convex, and Tailwind so recipes stay easy to manage while cooking without losing your flow.
 
 ## Stack
 
-- `apps/web`: React + Vite + Tailwind
-- `apps/api`: Bun + Fastify + Prisma
-- `db`: PostgreSQL
+- `apps/web`: React + Vite + Tailwind + Convex
 
 ## Features
 
 - CRUD recipes
+- email/password login with Convex + Better Auth
+- private recipes scoped to the signed-in user, with invited editor access
+- public recipe sharing with read-only access for other viewers
+- multi-user recipe collaboration for ingredients, steps, timers, and completion progress
 - CRUD ingredients with per-ingredient unit conversion
 - CRUD ordered recipe steps
 - Drag-and-drop ordering for ingredients and steps
-- Countdown timers on steps
+- Recipe-specific countdown timers on steps
 - Step started and completed timestamps
-- Docker Compose support
 
 ## Requirements
 
 - Bun
-- PostgreSQL
+- Convex account and deployment URL
 - Git Bash recommended for local dev on Windows
 
 ## Local setup
@@ -39,76 +40,52 @@ cd RecipeAtlas
 bun install
 ```
 
-3. Create the API env file:
+3. Create a local web env file:
 
 ```bash
-cp apps/api/.env.example apps/api/.env
+cp .env.example apps/web/.env.local
 ```
 
-4. Make sure PostgreSQL is running locally or via Docker, with:
+4. Set `VITE_CONVEX_URL` in `apps/web/.env.local` to your Convex deployment URL.
+   If you want to set it explicitly, also add `VITE_CONVEX_SITE_URL` with the matching `.site` URL.
 
-- database: `recipes`
-- user: `recipes`
-- password: `recipes`
-- port: `5432`
-
-5. Generate Prisma client and run migrations:
+5. Start Convex dev once to configure or attach the project:
 
 ```bash
-cd apps/api
-bunx prisma generate
-bunx prisma migrate deploy
+cd apps/web
+bunx convex dev
+```
+
+6. Configure Better Auth for your Convex deployment:
+
+```bash
+cd apps/web
+npx convex env set BETTER_AUTH_SECRET <generate-a-random-secret>
+npx convex env set SITE_URL http://localhost:5173
 ```
 
 ## Run locally
 
-Start frontend and backend together with hot reload:
+Start Vite and Convex dev together with hot reload:
 
 ```bash
 bun run dev
 ```
 
-Or run them separately:
-
-```bash
-bun run dev:api
-```
+Or run them separately from the root:
 
 ```bash
 bun run dev:web
 ```
 
+```bash
+bun run dev:convex
+```
+
 Local URLs:
 
 - web: `http://localhost:5173`
-- api: `http://localhost:3000`
-- health: `http://localhost:3000/health`
-
-## Docker
-
-Start everything with Docker Compose:
-
-```bash
-docker compose up --build
-```
-
-Or with the workspace script:
-
-```bash
-bun run docker:up
-```
-
-Stop and remove containers and volumes:
-
-```bash
-docker compose down -v
-```
-
-Or:
-
-```bash
-bun run docker:down
-```
+- Convex dashboard/deployment: provided by Convex during setup
 
 ## Useful commands
 
@@ -118,30 +95,16 @@ Install all dependencies:
 bun install
 ```
 
-Run API tests:
+Run all tests:
 
 ```bash
-bun run test:api
+bun run test
 ```
 
 Run frontend tests:
 
 ```bash
 bun run test:web
-```
-
-Run Prisma generate:
-
-```bash
-cd apps/api
-bun run prisma:generate
-```
-
-Run Prisma migrations:
-
-```bash
-cd apps/api
-bun run prisma:migrate
 ```
 
 Run frontend build:
@@ -160,28 +123,15 @@ bun run preview
 
 ## Environment
 
-Root Docker env example:
+Root env example:
 
 ```env
-POSTGRES_DB=recipes
-POSTGRES_USER=recipes
-POSTGRES_PASSWORD=recipes
-POSTGRES_PORT=5432
-DATABASE_URL=postgresql://recipes:recipes@db:5432/recipes?schema=public
-PORT=3000
-```
-
-Local API env example:
-
-```env
-NODE_ENV=development
-PORT=3000
-HOST=::
-DATABASE_URL=postgresql://recipes:recipes@localhost:5432/recipes?schema=public
+VITE_CONVEX_URL=https://your-deployment.convex.cloud
 ```
 
 ## Notes
 
 - `Reset all steps` also clears started/completed state and resets local countdown timers.
+- Recipe timers persist per recipe in local browser storage, so navigating away and back keeps the active countdown for that recipe.
 - Ingredient unit conversion is per ingredient row.
-- Recipe cards on the main screen open directly when clicked.
+- Signed-in users see their own private and public recipes. Signed-out users only see public recipes.

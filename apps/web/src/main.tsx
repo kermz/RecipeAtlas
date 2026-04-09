@@ -1,15 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { ConvexBetterAuthProvider } from '@convex-dev/better-auth/react';
 import '@fontsource/jetbrains-mono';
 import { App } from './App';
-import { queryClient } from './lib/query-client';
+import { authClient } from './lib/auth-client';
+import { convex } from './lib/convex-client';
 import './styles/globals.css';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
+    <ConvexBetterAuthProvider client={convex} authClient={authClient}>
       <App />
-    </QueryClientProvider>
+    </ConvexBetterAuthProvider>
   </React.StrictMode>
 );

@@ -11,11 +11,13 @@ type RecipeLike = {
   id: string;
   title: string;
   description: string | null | undefined;
+  visibility?: 'private' | 'public';
 } | null;
 
 const recipeSchema = z.object({
   title: z.string().min(1, 'Recipe title is required'),
-  description: z.string().optional()
+  description: z.string().optional(),
+  visibility: z.enum(['private', 'public']).default('private')
 });
 
 export type RecipeFormValues = z.infer<typeof recipeSchema>;
@@ -33,7 +35,8 @@ export function RecipeDialog({ open, recipe, onClose, onSubmit, onDelete }: Reci
     resolver: zodResolver(recipeSchema),
     defaultValues: {
       title: recipe?.title ?? '',
-      description: recipe?.description ?? ''
+      description: recipe?.description ?? '',
+      visibility: recipe?.visibility ?? 'private'
     }
   });
 
@@ -44,7 +47,8 @@ export function RecipeDialog({ open, recipe, onClose, onSubmit, onDelete }: Reci
 
     form.reset({
       title: recipe?.title ?? '',
-      description: recipe?.description ?? ''
+      description: recipe?.description ?? '',
+      visibility: recipe?.visibility ?? 'private'
     });
   }, [form, open, recipe]);
 
@@ -67,6 +71,24 @@ export function RecipeDialog({ open, recipe, onClose, onSubmit, onDelete }: Reci
         </Field>
         <Field label="Description" hint="Optional short context for the recipe." error={form.formState.errors.description?.message}>
           <Textarea placeholder="A light tomato sauce with fresh basil." {...form.register('description')} />
+        </Field>
+        <Field label="Visibility" hint="Private recipes stay hidden unless you invite editors. Public recipes can be viewed by anyone with access to the app.">
+          <div className="flex flex-wrap gap-2 rounded-[20px] border border-white/10 bg-white/[0.03] p-1.5">
+            <Button
+              type="button"
+              variant={form.watch('visibility') === 'private' ? 'primary' : 'ghost'}
+              onClick={() => form.setValue('visibility', 'private')}
+            >
+              Private
+            </Button>
+            <Button
+              type="button"
+              variant={form.watch('visibility') === 'public' ? 'primary' : 'ghost'}
+              onClick={() => form.setValue('visibility', 'public')}
+            >
+              Public
+            </Button>
+          </div>
         </Field>
         <div className="flex flex-col-reverse gap-3 border-t border-white/8 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center">

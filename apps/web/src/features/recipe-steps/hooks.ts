@@ -1,76 +1,67 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { completeStep, createStep, deleteStep, resetStep, startStepTimer, updateStep } from './api';
-import { recipeKeys } from '../recipes/hooks';
+import { api } from '../../../convex/_generated/api';
 import type { RecipeStepInput } from '../../lib/types';
+import { useConvexMutation } from '../../lib/use-convex-mutation';
 
 export function useCreateStep(recipeId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: RecipeStepInput) => createStep(recipeId, input),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: recipeKeys.detail(recipeId) });
-    }
-  });
+  const mutation = useConvexMutation(api.recipes.createStep);
+
+  return {
+    ...mutation,
+    mutateAsync: (input: RecipeStepInput) => mutation.mutateAsync({ recipeId, ...input })
+  };
 }
 
 export function useUpdateStep(recipeId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ stepId, input }: { stepId: string; input: Partial<RecipeStepInput> }) => updateStep(stepId, input),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: recipeKeys.detail(recipeId) });
-    }
-  });
+  const mutation = useConvexMutation(api.recipes.updateStep);
+
+  return {
+    ...mutation,
+    mutateAsync: ({ stepId, input }: { stepId: string; input: Partial<RecipeStepInput> }) =>
+      mutation.mutateAsync({ stepId, ...input })
+  };
 }
 
 export function useDeleteStep(recipeId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: deleteStep,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: recipeKeys.detail(recipeId) });
-    }
-  });
+  const mutation = useConvexMutation(api.recipes.deleteStep);
+
+  return {
+    ...mutation,
+    mutateAsync: (stepId: string) => mutation.mutateAsync({ stepId })
+  };
 }
 
 export function useCompleteStep(recipeId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: completeStep,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: recipeKeys.detail(recipeId) });
-    }
-  });
+  const mutation = useConvexMutation(api.recipes.completeStep);
+
+  return {
+    ...mutation,
+    mutateAsync: (stepId: string) => mutation.mutateAsync({ stepId })
+  };
 }
 
 export function useStartStepTimer(recipeId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: startStepTimer,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: recipeKeys.detail(recipeId) });
-    }
-  });
+  const mutation = useConvexMutation(api.recipes.startStepTimer);
+
+  return {
+    ...mutation,
+    mutateAsync: (stepId: string) => mutation.mutateAsync({ stepId })
+  };
 }
 
 export function useResetStep(recipeId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: resetStep,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: recipeKeys.detail(recipeId) });
-    }
-  });
+  const mutation = useConvexMutation(api.recipes.resetStep);
+
+  return {
+    ...mutation,
+    mutateAsync: (stepId: string) => mutation.mutateAsync({ stepId })
+  };
 }
 
 export function useResetAllSteps(recipeId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (stepIds: string[]) => {
-      await Promise.all(stepIds.map((stepId) => resetStep(stepId)));
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: recipeKeys.detail(recipeId) });
-    }
-  });
+  const mutation = useConvexMutation(api.recipes.resetAllSteps);
+
+  return {
+    ...mutation,
+    mutateAsync: () => mutation.mutateAsync({ recipeId })
+  };
 }

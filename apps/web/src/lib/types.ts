@@ -1,4 +1,12 @@
 export type Id = string;
+export type RecipeVisibility = 'private' | 'public';
+export type RecipeCollaborator = {
+  id: Id;
+  recipeId: Id;
+  email: string;
+  isCurrentUser: boolean;
+  createdAt: string;
+};
 
 export type IngredientUnit = 'g' | 'kg' | 'oz' | 'lb' | 'ml' | 'l' | 'tsp' | 'Tbs' | 'cup' | 'fl-oz' | 'pcs';
 
@@ -19,8 +27,15 @@ export type RecipeSummary = {
   id: Id;
   title: string;
   description: string | null;
+  ownerName: string;
+  visibility: RecipeVisibility;
+  isOwner: boolean;
+  isCollaborator: boolean;
+  canEdit: boolean;
   createdAt: string;
   updatedAt: string;
+  collaboratorCount?: number;
+  collaborators?: RecipeCollaborator[];
   ingredientsCount?: number;
   ingredients?: RecipeIngredient[];
   stepsCount?: number;
@@ -48,6 +63,7 @@ export type RecipeDetail = RecipeSummary & {
 export type RecipeInput = {
   title: string;
   description?: string | null;
+  visibility?: RecipeVisibility;
 };
 
 export type RecipeStepInput = {

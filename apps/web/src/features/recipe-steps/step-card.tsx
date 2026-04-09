@@ -10,18 +10,20 @@ import { formatDuration } from './time-format';
 
 type StepCardProps = {
   editMode: boolean;
+  canInteract: boolean;
   step: RecipeStep;
   onEdit: (step: RecipeStep) => void;
   onComplete: (step: RecipeStep) => void;
   onReset: (step: RecipeStep) => void;
   onStartTimer: (step: RecipeStep) => void;
-  dragHandleAttributes?: Record<string, unknown>;
-  dragHandleListeners?: Record<string, unknown>;
+  dragHandleAttributes?: any;
+  dragHandleListeners?: any;
   isDragging?: boolean;
 };
 
 export function StepCard({
   editMode,
+  canInteract,
   step,
   onEdit,
   onComplete,
@@ -51,36 +53,40 @@ export function StepCard({
                 <span className="shrink-0">{step.position}.</span>
                 <span className="min-w-0 break-words">{step.title}</span>
               </h3>
-              <Button
-                size="sm"
-                variant="secondary"
-                aria-label={`Reset step ${step.position}`}
-                className="h-8 w-8 shrink-0 self-center px-0 sm:hidden"
-                onClick={async () => {
-                  setResetNonce((value) => value + 1);
-                  await Promise.resolve(onReset(step));
-                }}
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
+              {canInteract ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  aria-label={`Reset step ${step.position}`}
+                  className="h-8 w-8 shrink-0 self-center px-0 sm:hidden"
+                  onClick={async () => {
+                    setResetNonce((value) => value + 1);
+                    await Promise.resolve(onReset(step));
+                  }}
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              ) : null}
             </div>
             <div className="mt-2.5 sm:mt-4">
               <StepStatus timerStartedAt={step.timerStartedAt} completedAt={step.completedAt} elapsedSeconds={elapsedSeconds} />
             </div>
           </div>
           <div className="flex flex-wrap gap-2 lg:justify-end">
-            <Button
-              size="sm"
-              variant="secondary"
-              className="hidden sm:inline-flex"
-              onClick={async () => {
-                setResetNonce((value) => value + 1);
-                await Promise.resolve(onReset(step));
-              }}
-            >
-              <RotateCcw className="h-4 w-4" />
-              Reset done
-            </Button>
+            {canInteract ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                className="hidden sm:inline-flex"
+                onClick={async () => {
+                  setResetNonce((value) => value + 1);
+                  await Promise.resolve(onReset(step));
+                }}
+              >
+                <RotateCcw className="h-4 w-4" />
+                Reset done
+              </Button>
+            ) : null}
             {editMode ? (
               <>
                 <Button size="sm" variant="secondary" onClick={() => onEdit(step)}>
@@ -108,24 +114,29 @@ export function StepCard({
                 <span className="shrink-0">{step.position}.</span>
                 <span className="min-w-0 break-words">{step.title}</span>
               </h3>
-              <Button
-                size="sm"
-                variant="secondary"
-                aria-label={`Mark step ${step.position} done`}
-                className="h-8 w-8 shrink-0 self-center border-[rgba(191,209,171,0.18)] px-0 text-[color:var(--accent-strong)] hover:border-[rgba(191,209,171,0.3)] hover:text-[color:var(--accent-strong)] sm:hidden"
-                onClick={async () => {
-                  await Promise.resolve(onComplete(step));
-                }}
-              >
-                <CheckCircle2 className="h-4 w-4" />
-              </Button>
+              {canInteract ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  aria-label={`Mark step ${step.position} done`}
+                  className="h-8 w-8 shrink-0 self-center border-[rgba(191,209,171,0.18)] px-0 text-[color:var(--accent-strong)] hover:border-[rgba(191,209,171,0.3)] hover:text-[color:var(--accent-strong)] sm:hidden"
+                  onClick={async () => {
+                    await Promise.resolve(onComplete(step));
+                  }}
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                </Button>
+              ) : null}
             </div>
             {step.instructions ? <p className="mt-1.5 whitespace-pre-wrap text-[10px] leading-5 text-[color:var(--text-secondary)] sm:mt-4 sm:text-sm sm:leading-7">{step.instructions}</p> : null}
             <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-5 sm:gap-3">
               <StepTimer
+                recipeId={step.recipeId}
+                stepId={step.id}
                 durationSeconds={step.timerDurationSeconds}
                 timerStartedAt={step.timerStartedAt}
                 completedAt={step.completedAt}
+                readOnly={!canInteract}
                 resetNonce={resetNonce}
                 onStart={() => onStartTimer(step)}
               />
@@ -133,17 +144,19 @@ export function StepCard({
             </div>
           </div>
           <div className="flex flex-wrap gap-2 lg:justify-end">
-            <Button
-              size="sm"
-              variant="primary"
-              className="hidden sm:inline-flex"
-              onClick={async () => {
-                await Promise.resolve(onComplete(step));
-              }}
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              Mark done
-            </Button>
+            {canInteract ? (
+              <Button
+                size="sm"
+                variant="primary"
+                className="hidden sm:inline-flex"
+                onClick={async () => {
+                  await Promise.resolve(onComplete(step));
+                }}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Mark done
+              </Button>
+            ) : null}
             {editMode ? (
               <>
                 <Button size="sm" variant="secondary" onClick={() => onEdit(step)}>

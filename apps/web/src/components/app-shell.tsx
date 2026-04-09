@@ -1,11 +1,19 @@
+import { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { BookMarked, Sparkles } from 'lucide-react';
+import { BookMarked, LogOut, Sparkles } from 'lucide-react';
+import { Button } from './ui/button';
 import { cn } from '../lib/cn';
+import { AuthDialog } from '../features/auth/auth-dialog';
+import { useAuthActions, useAuthSession } from '../features/auth/hooks';
 
 export function AppShell() {
   const location = useLocation();
   const showHero = location.pathname === '/recipes';
   const shellLabel = location.pathname.startsWith('/recipes/') ? 'Recipe workspace' : 'Collection workspace';
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const { signOut } = useAuthActions();
+  const { isAuthenticated, isLoading, user } = useAuthSession();
+  const userLabel = user?.name?.trim() || user?.email || 'Signed in';
 
   return (
     <div className="min-h-screen text-white">
@@ -38,6 +46,31 @@ export function AppShell() {
                   <BookMarked className="h-4 w-4" />
                   Recipes
                 </NavLink>
+                {isLoading ? (
+                  <div className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[10px] uppercase tracking-[0.14em] text-[color:var(--text-secondary)] sm:block">
+                    Checking session
+                  </div>
+                ) : isAuthenticated ? (
+                  <div className="flex items-center gap-2">
+                    <div className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[10px] uppercase tracking-[0.14em] text-[color:var(--text-secondary)] lg:block">
+                      {userLabel}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={async () => {
+                        await signOut();
+                      }}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign out
+                    </Button>
+                  </div>
+                ) : (
+                  <Button size="sm" variant="secondary" onClick={() => setAuthDialogOpen(true)}>
+                    Sign in
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -52,25 +85,25 @@ export function AppShell() {
                   Kitchen Console
                 </div>
                 <h1 className="app-heading max-w-4xl text-[2.2rem] font-semibold leading-[1.02] sm:text-5xl lg:text-6xl">
-                  Keep recipes, timers, and cooking flow in one sharp workspace.
+                  Keep personal recipes, shared recipes, and step timers in one sharp workspace.
                 </h1>
                 <p className="mt-4 max-w-2xl text-[13px] leading-6 text-[color:var(--text-secondary)] sm:mt-5 sm:text-base sm:leading-7">
-                  Recipe Atlas is tuned for real use at the counter: ordered ingredients, timed steps, fast edits, and a layout that works just as well on a phone as it does on a laptop.
+                  Recipe Atlas is tuned for real use at the counter: ordered ingredients, recipe-scoped timers, fast edits, and clear sharing controls that work just as well on a phone as on a laptop.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3 text-xs text-[color:var(--text-secondary)]">
                   <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2">Drag to reorder ingredients and steps</span>
-                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2">Local step countdowns stay lightweight</span>
-                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2">Built for dense editing without clutter</span>
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2">Recipe-specific countdowns persist locally</span>
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2">Private drafts and public sharing live side by side</span>
                 </div>
               </div>
               <div className="grid gap-3 text-sm">
                 <div className="rounded-[26px] border border-white/10 bg-[rgba(255,255,255,0.04)] p-4 sm:p-5">
                   <p className="app-kicker">Collection</p>
-                  <p className="mt-3 text-base leading-7 text-white">See recent recipes first, jump into any detail view, and keep edits close to the content.</p>
+                  <p className="mt-3 text-base leading-7 text-white">See your recipes first, browse public ones, and keep sharing choices close to the content.</p>
                 </div>
                 <div className="rounded-[26px] border border-white/10 bg-[rgba(255,255,255,0.04)] p-4 sm:p-5">
                   <p className="app-kicker">Cooking flow</p>
-                  <p className="mt-3 text-base leading-7 text-white">Track progress step by step with timers, reset actions, and completion state that stays easy to scan.</p>
+                  <p className="mt-3 text-base leading-7 text-white">Track progress step by step with recipe-bound timers, reset actions, and completion state that stays easy to scan.</p>
                 </div>
               </div>
             </div>
@@ -86,6 +119,7 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+      <AuthDialog open={authDialogOpen} onClose={() => setAuthDialogOpen(false)} />
     </div>
   );
 }

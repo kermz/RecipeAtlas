@@ -13,7 +13,7 @@ import { formatRecipeTotalTime } from './total-time';
 type RecipeListProps = {
   recipes?: RecipeSummary[];
   isLoading: boolean;
-  onCreate: () => void;
+  onCreate?: () => void;
 };
 
 export function RecipeList({ recipes, isLoading, onCreate }: RecipeListProps) {
@@ -97,17 +97,17 @@ export function RecipeList({ recipes, isLoading, onCreate }: RecipeListProps) {
 
   if (!recipes || recipes.length === 0) {
     return (
-      <EmptyState
-        title="No recipes yet"
-        description="Create your first recipe and start adding ordered steps with local countdown timers."
-        action={
-          <Button onClick={onCreate}>
-            <Plus className="h-4 w-4" />
-            New recipe
-          </Button>
-        }
-      />
-    );
+        <EmptyState
+          title="No recipes yet"
+          description={onCreate ? 'Create your first recipe and start adding ordered steps with recipe-specific countdown timers.' : 'Public recipes will show up here when they are shared.'}
+          action={onCreate ? (
+            <Button onClick={onCreate}>
+              <Plus className="h-4 w-4" />
+              New recipe
+            </Button>
+          ) : undefined}
+        />
+      );
   }
 
   return (
@@ -141,6 +141,11 @@ export function RecipeList({ recipes, isLoading, onCreate }: RecipeListProps) {
               </p>
 
               <div className="mt-6 flex flex-wrap items-center gap-2">
+                <Badge tone={recipe.visibility === 'public' ? 'accent' : 'neutral'}>{recipe.visibility}</Badge>
+                <Badge tone={recipe.isOwner ? 'success' : recipe.isCollaborator ? 'accent' : 'neutral'}>
+                  {recipe.isOwner ? 'Your recipe' : recipe.isCollaborator ? 'Shared with you' : `By ${recipe.ownerName}`}
+                </Badge>
+                <Badge tone="accent">{recipe.collaboratorCount ?? 0} editors</Badge>
                 <Badge tone="accent">{recipe.ingredientsCount ?? recipe.ingredients?.length ?? 0} ingredients</Badge>
                 <Badge tone="accent">{recipe.stepsCount ?? recipe.steps?.length ?? 0} steps</Badge>
                 <Badge tone="accent">{formatRecipeTotalTime(recipe)}</Badge>
