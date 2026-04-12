@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyRound } from 'lucide-react';
 import { Dialog } from '../../components/ui/dialog';
 import { Field } from '../../components/ui/field';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
-import { isPasskeySupported, useAuthActions } from './hooks';
+import { useAuthActions } from './auth-actions';
+import { isPasskeySupported } from './passkey-browser';
 
 type AuthMode = 'sign-in' | 'sign-up';
 
@@ -26,7 +27,7 @@ export function AuthDialog({ open, defaultMode = 'sign-in', onClose }: AuthDialo
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signIn, signInWithPasskey, signUp } = useAuthActions();
-  const passkeySupport = useMemo(() => isPasskeySupported(), []);
+  const passkeySupport = isPasskeySupported();
 
   useEffect(() => {
     if (!open) {
@@ -39,14 +40,11 @@ export function AuthDialog({ open, defaultMode = 'sign-in', onClose }: AuthDialo
     setIsSubmitting(false);
   }, [defaultMode, open]);
 
-  const title = useMemo(() => (mode === 'sign-in' ? 'Welcome back' : 'Create your account'), [mode]);
-  const description = useMemo(
-    () =>
-      mode === 'sign-in'
-        ? 'Sign in with a passkey or your email and password.'
-        : 'Create one account for your recipes, sharing, and collaborators.',
-    [mode]
-  );
+  const title = mode === 'sign-in' ? 'Welcome back' : 'Create your account';
+  const description =
+    mode === 'sign-in'
+      ? 'Sign in with a passkey or your email and password.'
+      : 'Create one account for your recipes, sharing, and collaborators.';
 
   return (
     <Dialog open={open} title={title} description={description} onClose={onClose} className="max-w-xl">

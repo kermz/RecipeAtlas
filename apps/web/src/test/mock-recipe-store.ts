@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useMemo, useRef, useSyncExternalStore } from 'react';
 
 import type { RecipeCollaborator, RecipeDetail, RecipeIngredient, RecipeStep, RecipeSummary, RecipeVisibility } from '../lib/types';
 
@@ -65,6 +65,7 @@ type StoreState = {
 };
 
 const listeners = new Set<() => void>();
+let snapshotVersion = 0;
 
 function now() {
   return new Date().toISOString();
@@ -162,6 +163,7 @@ function createInitialState(): StoreState {
 let state = createInitialState();
 
 function emit() {
+  snapshotVersion += 1;
   for (const listener of listeners) {
     listener();
   }
@@ -338,13 +340,18 @@ export function resetMockRecipeStore() {
 }
 
 export function useMockRecipeStore<T>(selector: (snapshot: StoreState) => T) {
-  return useSyncExternalStore(
+  const selectorRef = useRef(selector);
+  selectorRef.current = selector;
+
+  const version = useSyncExternalStore(
     (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
-    () => selector(state)
+    () => snapshotVersion
   );
+
+  return useMemo(() => selectorRef.current(state), [version]);
 }
 
 export const mockAuthActions = {

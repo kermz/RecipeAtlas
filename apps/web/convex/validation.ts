@@ -1,4 +1,6 @@
-const ingredientUnits = new Set(["g", "kg", "oz", "lb", "ml", "l", "tsp", "Tbs", "cup", "fl-oz", "pcs"]);
+import type { IngredientUnit } from "./ingredient_units";
+
+const ingredientUnits = new Set<IngredientUnit>(["g", "kg", "oz", "lb", "ml", "l", "tsp", "Tbs", "cup", "fl-oz", "pcs"]);
 const recipeVisibilities = new Set(["private", "public"]);
 
 function normalizeOptionalText(value: string | null | undefined, maxLength: number, fieldName: string) {
@@ -67,7 +69,7 @@ export function validateRecipePatch(input: { title?: string; description?: strin
 export function validateIngredientInput(input: {
   name: string;
   quantity: number;
-  unit: string;
+  unit: IngredientUnit;
   notes?: string | null;
   purchased?: boolean;
   position?: number;
@@ -93,7 +95,7 @@ export function validateIngredientInput(input: {
 export function validateIngredientPatch(input: {
   name?: string;
   quantity?: number;
-  unit?: string;
+  unit?: IngredientUnit;
   notes?: string | null;
   purchased?: boolean;
   position?: number;

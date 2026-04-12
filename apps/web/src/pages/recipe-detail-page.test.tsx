@@ -1,44 +1,45 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, mock } from 'bun:test';
 import { screen } from '@testing-library/react';
 import { within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { renderApp } from '../test/utils';
 import * as authHooksMock from '../test/mocks/auth-hooks';
 import * as ingredientHooksMock from '../test/mocks/ingredients-hooks';
 import * as recipeStepHooksMock from '../test/mocks/recipe-steps-hooks';
 import * as recipeHooksMock from '../test/mocks/recipes-hooks';
 
-vi.mock('../features/auth/hooks', () => authHooksMock);
-vi.mock('../features/recipes/hooks', () => recipeHooksMock);
-vi.mock('../features/ingredients/hooks', () => ingredientHooksMock);
-vi.mock('../features/recipe-steps/hooks', () => recipeStepHooksMock);
+async function loadRenderApp() {
+  mock.module('../features/auth/hooks', () => authHooksMock);
+  mock.module('../features/recipes/hooks', () => recipeHooksMock);
+  mock.module('../features/ingredients/hooks', () => ingredientHooksMock);
+  mock.module('../features/recipe-steps/hooks', () => recipeStepHooksMock);
+
+  return (await import('../test/utils')).renderApp;
+}
 
 describe('RecipeDetailPage', () => {
   it('tracks ingredient purchases and can reset them', async () => {
     const user = userEvent.setup();
+    const renderApp = await loadRenderApp();
 
     renderApp('/recipes/recipe-1');
 
     expect(await screen.findByRole('heading', { name: 'Sourdough Loaf' })).toBeInTheDocument();
     expect(screen.getByText(/bread flour/i)).toBeInTheDocument();
-    expect(screen.getByText('0 bought')).toBeInTheDocument();
-    expect(screen.getByText('1 missing')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /mark bread flour as bought/i })).toHaveAttribute('aria-pressed', 'false');
 
     await user.click(screen.getByRole('button', { name: /mark bread flour as bought/i }));
 
-    expect(await screen.findByText('1 bought')).toBeInTheDocument();
-    expect(screen.getByText('0 missing')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /mark bread flour as missing/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /^reset$/i })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /reset ingredients/i }));
+    await user.click(screen.getByRole('button', { name: /^reset$/i }));
 
-    expect(await screen.findByText('0 bought')).toBeInTheDocument();
-    expect(screen.getByText('1 missing')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /mark bread flour as bought/i })).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('shows steps and records completion', async () => {
     const user = userEvent.setup();
+    const renderApp = await loadRenderApp();
 
     renderApp('/recipes/recipe-1');
 

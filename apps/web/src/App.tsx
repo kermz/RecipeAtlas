@@ -4,5 +4,5 @@ import { createAppRouter } from './router';
 
 export function App() {
   const router = useMemo(() => createAppRouter(), []);
-  return <RouterProvider router={router} />;
+  return <RouterProvider router={router} future={{ v7_startTransition: true }} />;
 }

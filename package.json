@@ -6,9 +6,9 @@
   ],
   "scripts": {
     "dev": "bash ./dev.sh",
-    "dev:web": "bun --cwd apps/web run dev",
-    "dev:convex": "bun --cwd apps/web run dev:convex",
-    "test:web": "bun --cwd apps/web run test",
-    "test": "bun --cwd apps/web run test"
+    "dev:web": "bun run --cwd apps/web dev",
+    "dev:convex": "bun run --cwd apps/web dev:convex",
+    "test:web": "bun run --cwd apps/web test",
+    "test": "bun run --cwd apps/web test"
   }
 }

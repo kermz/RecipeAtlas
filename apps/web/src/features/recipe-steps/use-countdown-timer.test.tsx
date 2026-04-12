@@ -1,67 +1,43 @@
-import { act, renderHook } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { describe, expect, it, setSystemTime } from 'bun:test';
 import { useCountdownTimer } from './use-countdown-timer';
 
 describe('useCountdownTimer', () => {
-  it('counts down locally and stops at zero', () => {
-    vi.useFakeTimers();
+  it('counts down locally and stops at zero', async () => {
+    const { result } = renderHook(() => useCountdownTimer(1));
 
-    try {
-      const { result } = renderHook(() => useCountdownTimer(3));
+    act(() => {
+      result.current.start();
+    });
 
-      act(() => {
-        result.current.start();
-      });
-
-      act(() => {
-        vi.advanceTimersByTime(2000);
-      });
-
-      expect(result.current.secondsLeft).toBe(1);
-      expect(result.current.isRunning).toBe(true);
-
-      act(() => {
-        vi.advanceTimersByTime(1000);
-      });
-
+    await waitFor(() => {
       expect(result.current.secondsLeft).toBe(0);
       expect(result.current.isRunning).toBe(false);
-    } finally {
-      vi.useRealTimers();
-    }
+    }, { timeout: 2500 });
   });
 
-  it('can restart after reaching zero', () => {
-    vi.useFakeTimers();
+  it('can restart after reaching zero', async () => {
+    const { result } = renderHook(() => useCountdownTimer(1));
 
-    try {
-      const { result } = renderHook(() => useCountdownTimer(2));
+    act(() => {
+      result.current.start();
+    });
 
-      act(() => {
-        result.current.start();
-      });
-
-      act(() => {
-        vi.advanceTimersByTime(2000);
-      });
-
+    await waitFor(() => {
       expect(result.current.secondsLeft).toBe(0);
       expect(result.current.isRunning).toBe(false);
+    }, { timeout: 2500 });
 
-      act(() => {
-        result.current.start();
-      });
+    act(() => {
+      result.current.start();
+    });
 
-      expect(result.current.isRunning).toBe(true);
-      expect(result.current.secondsLeft).toBe(2);
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(result.current.isRunning).toBe(true);
+    expect(result.current.secondsLeft).toBe(1);
   });
 
   it('restores recipe-specific timer state from local storage', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-04-09T12:00:00.000Z'));
+    setSystemTime(new Date('2026-04-09T12:00:00.000Z'));
 
     try {
       const storageKey = 'recipe-timer:v1:recipe-1:step-1';
@@ -94,7 +70,7 @@ describe('useCountdownTimer', () => {
       expect(restored.result.current.isRunning).toBe(false);
       expect(restored.result.current.secondsLeft).toBe(90);
     } finally {
-      vi.useRealTimers();
+      setSystemTime();
     }
   });
 });

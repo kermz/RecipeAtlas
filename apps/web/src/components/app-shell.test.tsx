@@ -1,21 +1,32 @@
-import { describe, expect, it, vi } from 'vitest';
-import { screen } from '@testing-library/react';
+import { describe, expect, it, mock } from 'bun:test';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { renderApp } from '../test/utils';
 import { mockAuthActions } from '../test/mock-recipe-store';
 import * as authHooksMock from '../test/mocks/auth-hooks';
 import * as ingredientHooksMock from '../test/mocks/ingredients-hooks';
 import * as recipeStepHooksMock from '../test/mocks/recipe-steps-hooks';
 import * as recipeHooksMock from '../test/mocks/recipes-hooks';
 
-vi.mock('../features/auth/hooks', () => authHooksMock);
-vi.mock('../features/recipes/hooks', () => recipeHooksMock);
-vi.mock('../features/ingredients/hooks', () => ingredientHooksMock);
-vi.mock('../features/recipe-steps/hooks', () => recipeStepHooksMock);
+async function loadRenderApp() {
+  mock.module('../features/auth/hooks', () => authHooksMock);
+  mock.module('../features/auth/auth-session', () => ({ useAuthSession: authHooksMock.useAuthSession }));
+  mock.module('../features/auth/auth-actions', () => ({ useAuthActions: authHooksMock.useAuthActions }));
+  mock.module('../features/auth/passkey-queries', () => ({ usePasskeys: authHooksMock.usePasskeys }));
+  mock.module('../features/auth/passkey-browser', () => ({
+    isPasskeySupported: authHooksMock.isPasskeySupported,
+    syncAcceptedPasskeysOnDevice: authHooksMock.syncAcceptedPasskeysOnDevice
+  }));
+  mock.module('../features/recipes/hooks', () => recipeHooksMock);
+  mock.module('../features/ingredients/hooks', () => ingredientHooksMock);
+  mock.module('../features/recipe-steps/hooks', () => recipeStepHooksMock);
+
+  return (await import('../test/utils')).renderApp;
+}
 
 describe('AppShell', () => {
   it('opens user settings from the username button and manages passkeys there', async () => {
     const user = userEvent.setup();
+    const renderApp = await loadRenderApp();
 
     renderApp('/recipes');
 
@@ -38,6 +49,7 @@ describe('AppShell', () => {
 
   it('signs out from user settings instead of the header', async () => {
     const user = userEvent.setup();
+    const renderApp = await loadRenderApp();
 
     renderApp('/recipes/recipe-1');
 
@@ -52,6 +64,7 @@ describe('AppShell', () => {
 
   it('explains the sign-in options more clearly', async () => {
     const user = userEvent.setup();
+    const renderApp = await loadRenderApp();
 
     await mockAuthActions.signOut();
     renderApp('/recipes');
@@ -64,5 +77,24 @@ describe('AppShell', () => {
     expect(screen.getByText(/or continue with email/i)).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /^sign in$/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('button', { name: /^create account$/i }).length).toBeGreaterThan(0);
+  });
+
+  it('clears the checking session state when auth settles', async () => {
+    const renderApp = await loadRenderApp();
+
+    await mockAuthActions.signOut();
+    authHooksMock.setMockAuthHookState({ isLoading: true });
+
+    const view = renderApp('/recipes');
+    expect(screen.getByText(/checking session/i)).toBeInTheDocument();
+
+    authHooksMock.setMockAuthHookState({ isLoading: false });
+    view.unmount();
+    renderApp('/recipes');
+
+    await waitFor(() => {
+      expect(screen.queryByText(/checking session/i)).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument();
   });
 });

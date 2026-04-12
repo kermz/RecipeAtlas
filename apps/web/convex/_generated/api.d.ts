@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
+import type * as ingredient_units from "../ingredient_units.js";
 import type * as ordering from "../ordering.js";
 import type * as recipes from "../recipes.js";
 import type * as validation from "../validation.js";
@@ -23,6 +24,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   http: typeof http;
+  ingredient_units: typeof ingredient_units;
   ordering: typeof ordering;
   recipes: typeof recipes;
   validation: typeof validation;

@@ -1,7 +1,7 @@
 import { defineApp } from "convex/server";
 import betterAuth from "./betterAuth/convex.config";
 
-const app = defineApp();
+const app: ReturnType<typeof defineApp> = defineApp();
 
 app.use(betterAuth);
 

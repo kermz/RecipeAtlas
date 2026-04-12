@@ -1,5 +1,28 @@
 import { mockAuthActions, useMockRecipeStore } from '../mock-recipe-store';
 
+type MockAuthHookState = {
+  isLoading: boolean;
+  isAuthenticated: boolean | null;
+};
+
+const defaultMockAuthHookState: MockAuthHookState = {
+  isLoading: false,
+  isAuthenticated: null
+};
+
+let mockAuthHookState = defaultMockAuthHookState;
+
+export function setMockAuthHookState(nextState: Partial<MockAuthHookState>) {
+  mockAuthHookState = {
+    ...mockAuthHookState,
+    ...nextState
+  };
+}
+
+export function resetMockAuthHookState() {
+  mockAuthHookState = defaultMockAuthHookState;
+}
+
 export function isPasskeySupported() {
   return true;
 }
@@ -10,13 +33,14 @@ export async function syncAcceptedPasskeysOnDevice() {
 
 export function useAuthSession() {
   const session = useMockRecipeStore(() => mockAuthActions.getSession());
+  const isAuthenticated = mockAuthHookState.isAuthenticated ?? Boolean(session?.session);
 
   return {
     session: session?.session ?? null,
     user: session?.user ?? null,
     error: null,
-    isLoading: false,
-    isAuthenticated: Boolean(session?.session),
+    isLoading: mockAuthHookState.isLoading,
+    isAuthenticated,
     refetch: async () => session
   };
 }

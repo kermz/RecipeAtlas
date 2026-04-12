@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { ingredientUnitValidator } from "./ingredient_units";
 
 export default defineSchema({
   recipes: defineTable({
@@ -37,7 +38,7 @@ export default defineSchema({
     recipeId: v.id("recipes"),
     name: v.string(),
     quantity: v.number(),
-    unit: v.string(),
+    unit: ingredientUnitValidator,
     notes: v.optional(v.union(v.string(), v.null())),
     purchased: v.boolean(),
     position: v.number(),

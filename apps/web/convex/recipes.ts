@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
+import { ingredientUnitValidator } from "./ingredient_units";
 import { clampPosition, removeRecord, reorderRecords } from "./ordering";
 import {
   validateIngredientInput,
@@ -414,7 +415,7 @@ export const createIngredient = mutation({
     recipeId: v.id("recipes"),
     name: v.string(),
     quantity: v.number(),
-    unit: v.string(),
+    unit: ingredientUnitValidator,
     notes: v.optional(v.union(v.string(), v.null())),
     purchased: v.optional(v.boolean()),
     position: v.optional(v.number())
@@ -465,7 +466,7 @@ export const updateIngredient = mutation({
     ingredientId: v.id("recipeIngredients"),
     name: v.optional(v.string()),
     quantity: v.optional(v.number()),
-    unit: v.optional(v.string()),
+    unit: v.optional(ingredientUnitValidator),
     notes: v.optional(v.union(v.string(), v.null())),
     purchased: v.optional(v.boolean()),
     position: v.optional(v.number())

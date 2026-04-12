@@ -1,11 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyRound, ShieldCheck, Trash2 } from 'lucide-react';
 import type { Passkey } from '@better-auth/passkey';
 import { Field } from '../../components/ui/field';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { isPasskeySupported, syncAcceptedPasskeysOnDevice, useAuthActions, useAuthSession, usePasskeys } from './hooks';
+import { useAuthActions } from './auth-actions';
+import { useAuthSession } from './auth-session';
+import { isPasskeySupported, syncAcceptedPasskeysOnDevice } from './passkey-browser';
+import { usePasskeys } from './passkey-queries';
 
 type PasskeySettingsPanelProps = {
   active: boolean;
@@ -37,7 +40,7 @@ export function PasskeySettingsPanel({ active }: PasskeySettingsPanelProps) {
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const { isAuthenticated, user } = useAuthSession();
   const { addPasskey, deletePasskey } = useAuthActions();
-  const passkeySupport = useMemo(() => isPasskeySupported(), []);
+  const passkeySupport = isPasskeySupported();
   const passkeysQuery = usePasskeys(active && isAuthenticated);
 
   useEffect(() => {
