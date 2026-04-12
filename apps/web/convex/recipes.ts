@@ -23,6 +23,7 @@ type IdentityLike = {
   name?: string | null;
   email?: string | null;
   emailNormalized: string | null;
+  emailVerified: boolean;
 } | null;
 type RecipeAccess = {
   viewerTokenIdentifier: string | null;
@@ -141,7 +142,8 @@ async function getIdentity(ctx: Pick<QueryCtx, "auth"> | Pick<MutationCtx, "auth
     tokenIdentifier: identity.tokenIdentifier,
     name: identity.name ?? null,
     email: identity.email ?? null,
-    emailNormalized: normalizeEmail(identity.email)
+    emailNormalized: normalizeEmail(identity.email),
+    emailVerified: identity.emailVerified === true
   };
 }
 
@@ -151,7 +153,7 @@ function getOwnerName(identity: NonNullable<IdentityLike>) {
 
 async function getRecipeAccess(db: DbReader, recipe: RecipeDoc, identity: IdentityLike): Promise<RecipeAccess> {
   const viewerTokenIdentifier = identity?.tokenIdentifier ?? null;
-  const viewerEmailNormalized = identity?.emailNormalized ?? null;
+  const viewerEmailNormalized = identity?.emailVerified ? identity.emailNormalized : null;
   const isOwner = isRecipeOwner(recipe, viewerTokenIdentifier);
   const collaborator = isOwner
     ? null
@@ -242,7 +244,7 @@ export const listRecipes = query({
   handler: async (ctx) => {
     const identity = await getIdentity(ctx);
     const viewerTokenIdentifier = identity?.tokenIdentifier ?? null;
-    const viewerEmailNormalized = identity?.emailNormalized ?? null;
+    const viewerEmailNormalized = identity?.emailVerified ? identity.emailNormalized : null;
     const publicRecipes = await ctx.db
       .query("recipes")
       .withIndex("by_visibility_and_updatedAt", (q) => q.eq("visibility", "public"))
@@ -901,6 +903,10 @@ export const addRecipeCollaborator = mutation({
 
     if (!identity.emailNormalized) {
       throw new Error("Your account must have an email address to do that");
+    }
+
+    if (!identity.emailVerified) {
+      throw new Error("Verify your email address before managing collaborator access");
     }
 
     if (collaboratorEmail === identity.emailNormalized) {

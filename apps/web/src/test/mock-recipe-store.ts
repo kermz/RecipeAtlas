@@ -16,6 +16,20 @@ type MockSession = {
   user: MockUser;
 };
 
+type MockPasskey = {
+  id: string;
+  name?: string;
+  publicKey: string;
+  userId: string;
+  credentialID: string;
+  counter: number;
+  deviceType: 'singleDevice' | 'multiDevice';
+  backedUp: boolean;
+  transports?: string;
+  createdAt: string;
+  aaguid?: string;
+};
+
 type RecipeRecord = {
   id: string;
   title: string;
@@ -41,11 +55,13 @@ type StoreState = {
   collaborators: Record<string, RecipeCollaboratorRecord[]>;
   ingredients: Record<string, RecipeIngredient[]>;
   steps: Record<string, RecipeStep[]>;
+  passkeysByUserId: Record<string, MockPasskey[]>;
   recipeSeq: number;
   collaboratorSeq: number;
   ingredientSeq: number;
   stepSeq: number;
   userSeq: number;
+  passkeySeq: number;
 };
 
 const listeners = new Set<() => void>();
@@ -131,11 +147,15 @@ function createInitialState(): StoreState {
         }
       ]
     },
+    passkeysByUserId: {
+      [primaryUser.id]: []
+    },
     recipeSeq: 2,
     collaboratorSeq: 1,
     ingredientSeq: 2,
     stepSeq: 3,
-    userSeq: 2
+    userSeq: 2,
+    passkeySeq: 1
   };
 }
 
@@ -305,6 +325,10 @@ function getOrCreateUser(name: string, email: string) {
     ...state.usersByEmail,
     [email]: user
   };
+  state.passkeysByUserId = {
+    ...state.passkeysByUserId,
+    [user.id]: state.passkeysByUserId[user.id] ?? []
+  };
   return user;
 }
 
@@ -350,8 +374,64 @@ export const mockAuthActions = {
     emit();
     return this.getSession();
   },
+  async signInWithPasskey() {
+    const currentUser = getCurrentUser();
+
+    if (currentUser) {
+      return this.getSession();
+    }
+
+    const userWithPasskey = Object.values(state.usersByEmail).find(
+      (user) => (state.passkeysByUserId[user.id] ?? []).length > 0
+    );
+
+    if (!userWithPasskey) {
+      throw new Error('No saved passkey is available for this account');
+    }
+
+    state.currentUser = userWithPasskey;
+    emit();
+    return this.getSession();
+  },
   async signOut() {
     state.currentUser = null;
+    emit();
+    return null;
+  },
+  listPasskeys() {
+    const currentUser = getCurrentUser();
+
+    if (!currentUser) {
+      return [];
+    }
+
+    return clone(state.passkeysByUserId[currentUser.id] ?? []);
+  },
+  async addPasskey(input?: { name?: string }) {
+    const currentUser = assertSignedIn();
+    const passkey: MockPasskey = {
+      id: `passkey-${state.passkeySeq++}`,
+      name: input?.name?.trim() || `Passkey ${state.passkeySeq - 1}`,
+      publicKey: `public-key-${state.passkeySeq}`,
+      userId: currentUser.id,
+      credentialID: `credential-${state.passkeySeq}`,
+      counter: 0,
+      deviceType: 'singleDevice',
+      backedUp: false,
+      transports: 'internal',
+      createdAt: now()
+    };
+
+    state.passkeysByUserId[currentUser.id] = [...(state.passkeysByUserId[currentUser.id] ?? []), passkey];
+    emit();
+    return clone(passkey);
+  },
+  async deletePasskey(passkeyId: string) {
+    const currentUser = assertSignedIn();
+
+    state.passkeysByUserId[currentUser.id] = (state.passkeysByUserId[currentUser.id] ?? []).filter(
+      (passkey) => passkey.id !== passkeyId
+    );
     emit();
     return null;
   }

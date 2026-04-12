@@ -1,17 +1,25 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { BookMarked, LogOut, Sparkles } from 'lucide-react';
+import { BookMarked, Settings2, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
-import { cn } from '../lib/cn';
-import { AuthDialog } from '../features/auth/auth-dialog';
-import { useAuthActions, useAuthSession } from '../features/auth/hooks';
+import { useAuthSession } from '../features/auth/hooks';
+
+const AuthDialog = lazy(async () => {
+  const module = await import('../features/auth/auth-dialog');
+  return { default: module.AuthDialog };
+});
+
+const UserSettingsDialog = lazy(async () => {
+  const module = await import('../features/auth/user-settings-dialog');
+  return { default: module.UserSettingsDialog };
+});
 
 export function AppShell() {
   const location = useLocation();
   const showHero = location.pathname === '/recipes';
   const shellLabel = location.pathname.startsWith('/recipes/') ? 'Recipe workspace' : 'Collection workspace';
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
-  const { signOut } = useAuthActions();
+  const [userSettingsDialogOpen, setUserSettingsDialogOpen] = useState(false);
   const { isAuthenticated, isLoading, user } = useAuthSession();
   const userLabel = user?.name?.trim() || user?.email || 'Signed in';
 
@@ -21,7 +29,10 @@ export function AppShell() {
         <header className="page-fade sticky top-0 z-30 mb-3 sm:mb-6">
           <div className="rounded-[22px] border border-white/10 bg-[rgba(10,13,11,0.92)] px-2 py-2 shadow-[0_18px_60px_rgba(0,0,0,0.24)] backdrop-blur-xl sm:rounded-[28px] sm:px-5 sm:py-3">
             <div className="flex items-center justify-between gap-2 sm:gap-3">
-              <div className="flex min-w-0 items-center gap-3">
+              <NavLink
+                to="/recipes"
+                className="flex min-w-0 items-center gap-3 rounded-2xl px-1 py-1 transition duration-200 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[rgba(191,209,171,0.72)] focus:ring-offset-2 focus:ring-offset-transparent"
+              >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] text-[color:var(--accent-strong)] sm:h-11 sm:w-11 sm:rounded-2xl">
                   <BookMarked className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
                 </div>
@@ -29,41 +40,24 @@ export function AppShell() {
                   <p className="app-kicker">Recipe Atlas</p>
                   <p className="truncate text-[11px] text-[color:var(--text-secondary)] sm:text-xs">{shellLabel}</p>
                 </div>
-              </div>
+              </NavLink>
 
               <div className="flex shrink-0 items-center gap-2 self-center">
-                <NavLink
-                  to="/recipes"
-                  className={({ isActive }) =>
-                    cn(
-                      'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[10px] font-semibold transition duration-200 active:scale-[0.98] sm:gap-2 sm:px-4 sm:py-2 sm:text-sm',
-                      isActive
-                        ? 'border-[rgba(191,209,171,0.34)] bg-[rgba(127,155,113,0.18)] text-[color:var(--accent-strong)]'
-                        : 'border-white/10 bg-white/5 text-[color:var(--text-primary)] hover:border-white/18 hover:bg-white/8'
-                    )
-                  }
-                >
-                  <BookMarked className="h-4 w-4" />
-                  Recipes
-                </NavLink>
                 {isLoading ? (
                   <div className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[10px] uppercase tracking-[0.14em] text-[color:var(--text-secondary)] sm:block">
                     Checking session
                   </div>
                 ) : isAuthenticated ? (
                   <div className="flex items-center gap-2">
-                    <div className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[10px] uppercase tracking-[0.14em] text-[color:var(--text-secondary)] lg:block">
-                      {userLabel}
-                    </div>
                     <Button
                       size="sm"
                       variant="secondary"
-                      onClick={async () => {
-                        await signOut();
-                      }}
+                      className="max-w-[12rem] justify-start sm:max-w-[16rem]"
+                      onClick={() => setUserSettingsDialogOpen(true)}
+                      title={userLabel}
                     >
-                      <LogOut className="h-4 w-4" />
-                      Sign out
+                      <Settings2 className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{userLabel}</span>
                     </Button>
                   </div>
                 ) : (
@@ -111,15 +105,23 @@ export function AppShell() {
         ) : null}
 
         <main
-          className={cn(
-            'page-fade relative flex-1 overflow-hidden rounded-[24px] border border-white/10 bg-[rgba(12,17,14,0.84)] p-2 shadow-[0_24px_100px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:rounded-[34px] sm:p-6 lg:p-8',
+          className={`page-fade relative flex-1 overflow-hidden rounded-[24px] border border-white/10 bg-[rgba(12,17,14,0.84)] p-2 shadow-[0_24px_100px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:rounded-[34px] sm:p-6 lg:p-8 ${
             showHero ? 'mt-6' : 'mt-0'
-          )}
+          }`}
         >
           <Outlet />
         </main>
       </div>
-      <AuthDialog open={authDialogOpen} onClose={() => setAuthDialogOpen(false)} />
+      {authDialogOpen ? (
+        <Suspense fallback={null}>
+          <AuthDialog open={authDialogOpen} onClose={() => setAuthDialogOpen(false)} />
+        </Suspense>
+      ) : null}
+      {userSettingsDialogOpen ? (
+        <Suspense fallback={null}>
+          <UserSettingsDialog open={userSettingsDialogOpen} onClose={() => setUserSettingsDialogOpen(false)} />
+        </Suspense>
+      ) : null}
     </div>
   );
 }

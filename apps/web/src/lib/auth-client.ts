@@ -1,4 +1,5 @@
 import { createAuthClient } from "better-auth/react";
+import { passkeyClient } from "@better-auth/passkey/client";
 import { convexClient, crossDomainClient } from "@convex-dev/better-auth/client/plugins";
 
 const convexUrl = import.meta.env.VITE_CONVEX_URL;
@@ -10,5 +11,5 @@ if (!convexSiteUrl) {
 
 export const authClient = createAuthClient({
   baseURL: convexSiteUrl,
-  plugins: [convexClient(), crossDomainClient()]
+  plugins: [passkeyClient(), convexClient(), crossDomainClient()]
 });

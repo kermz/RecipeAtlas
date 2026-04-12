@@ -147,7 +147,11 @@ class QueryBuilder {
   }
 }
 
-export function createConvexTestAuth(tokenIdentifier: string | null = "token-1", email: string | null = "chef@example.com") {
+export function createConvexTestAuth(
+  tokenIdentifier: string | null = "token-1",
+  email: string | null = "chef@example.com",
+  emailVerified = true
+) {
   return {
     async getUserIdentity() {
       if (!tokenIdentifier) {
@@ -157,7 +161,8 @@ export function createConvexTestAuth(tokenIdentifier: string | null = "token-1",
       return {
         tokenIdentifier,
         name: "Recipe Tester",
-        email
+        email,
+        emailVerified
       };
     }
   };

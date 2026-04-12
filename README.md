@@ -64,6 +64,17 @@ npx convex env set BETTER_AUTH_SECRET <generate-a-random-secret>
 npx convex env set SITE_URL http://localhost:5173
 ```
 
+If you want other devices on your local network to use the app, set `SITE_URL` to the LAN address they will open and allow both origins during development:
+
+```bash
+cd apps/web
+npx convex env set SITE_URL http://192.168.1.15:5173
+npx convex env set TRUSTED_ORIGINS http://localhost:5173,http://192.168.1.15:5173
+```
+
+Then have other devices open `http://192.168.1.15:5173`.
+Passkeys will not work over plain HTTP on a LAN IP, so use email/password for network testing unless you add HTTPS.
+
 ## Run locally
 
 Start Vite and Convex dev together with hot reload:
@@ -127,6 +138,7 @@ Root env example:
 
 ```env
 VITE_CONVEX_URL=https://your-deployment.convex.cloud
+VITE_CONVEX_SITE_URL=https://your-deployment.convex.site
 ```
 
 ## Notes
