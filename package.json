@@ -2,13 +2,13 @@
   "name": "recipes-monorepo",
   "private": true,
   "workspaces": [
-    "apps/*"
+    "web"
   ],
   "scripts": {
     "dev": "bash ./dev.sh",
-    "dev:web": "bun run --cwd apps/web dev",
-    "dev:convex": "bun run --cwd apps/web dev:convex",
-    "test:web": "bun run --cwd apps/web test",
-    "test": "bun run --cwd apps/web test"
+    "dev:web": "bun run --cwd web dev",
+    "dev:convex": "bun run --cwd web dev:convex",
+    "test:web": "bun run --cwd web test",
+    "test": "bun run --cwd web test"
   }
 }

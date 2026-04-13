@@ -16,12 +16,12 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
-echo "Starting Convex dev in apps/web"
-(cd "$ROOT_DIR/apps/web" && bun run dev:convex) &
+echo "Starting Convex dev in web"
+(cd "$ROOT_DIR/web" && bun run dev:convex) &
 CONVEX_PID=$!
 
 echo "Starting web on http://localhost:5173"
-(cd "$ROOT_DIR/apps/web" && bun run dev) &
+(cd "$ROOT_DIR/web" && bun run dev) &
 WEB_PID=$!
 
 wait "$CONVEX_PID" "$WEB_PID"

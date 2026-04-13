@@ -2,7 +2,7 @@
 
 ## Purpose
 
-RecipeAtlas is now a Bun monorepo centered on a single React + Vite + Tailwind app in `apps/web`, backed by Convex functions colocated in `apps/web/convex`.
+RecipeAtlas is now a Bun repo centered on a single React + Vite + Tailwind app in `web`, backed by Convex functions colocated in `web/convex`.
 
 Primary user flows:
 
@@ -20,7 +20,7 @@ Primary user flows:
 - `.env.example`: example `VITE_CONVEX_URL`
 - `README.md`: setup and local development instructions
 
-### Web (`apps/web`)
+### Web (`web`)
 
 - `src/main.tsx`: React entry point with `ConvexProvider`
 - `src/router.tsx`: browser routes
@@ -29,7 +29,7 @@ Primary user flows:
 - `src/features`: UI modules and Convex-backed hooks
 - `src/test`: page and hook tests using local mocked feature hooks
 
-### Convex (`apps/web/convex`)
+### Convex (`web/convex`)
 
 - `schema.ts`: Convex schema for recipes, ingredients, and steps
 - `recipes.ts`: public queries and mutations used by the web app
@@ -47,7 +47,7 @@ The backend is now native Convex:
 - `recipeIngredients` stores normalized ingredient rows with contiguous `position`
 - `recipeSteps` stores normalized step rows with contiguous `position`, `timerStartedAt`, and `completedAt`
 
-Active public functions live in `apps/web/convex/recipes.ts`:
+Active public functions live in `web/convex/recipes.ts`:
 
 - `listRecipes`
 - `getRecipe`
@@ -90,7 +90,7 @@ Step countdowns remain local browser timers. Convex persists only timestamps for
 
 ### Environment
 
-Expected variable in `apps/web/.env.local`:
+Expected variable in `web/.env.local`:
 
 - `VITE_CONVEX_URL`
 
@@ -98,27 +98,27 @@ Expected variable in `apps/web/.env.local`:
 
 ### Convex tests
 
-Convex tests call the actual query and mutation handlers with an in-memory Convex-style DB double from `apps/web/convex/test-helpers.ts`.
+Convex tests call the actual query and mutation handlers with an in-memory Convex-style DB double from `web/convex/test-helpers.ts`.
 
 ### Web tests
 
-Web page tests no longer use REST or MSW. They mock the feature hook modules with a local in-memory recipe store under `apps/web/src/test/mock-recipe-store.ts`.
+Web page tests no longer use REST or MSW. They mock the feature hook modules with a local in-memory recipe store under `web/src/test/mock-recipe-store.ts`.
 
 ## Safe Change Guidance
 
-- If you change ordering semantics, update both `apps/web/convex/ordering.ts` tests and the Convex function tests.
-- If you change payload shapes, update `apps/web/src/lib/types.ts`, Convex serializers in `apps/web/convex/recipes.ts`, and the mocked test store together.
+- If you change ordering semantics, update both `web/convex/ordering.ts` tests and the Convex function tests.
+- If you change payload shapes, update `web/src/lib/types.ts`, Convex serializers in `web/convex/recipes.ts`, and the mocked test store together.
 - If you change timer behavior, review both `step-timer.tsx` and `use-countdown-timer.ts`.
 
 ## Suggested First Files To Read
 
 - `README.md`
-- `apps/web/convex/schema.ts`
-- `apps/web/convex/recipes.ts`
-- `apps/web/src/pages/recipes-page.tsx`
-- `apps/web/src/pages/recipe-detail-page.tsx`
-- `apps/web/src/features/ingredients/ingredient-list.tsx`
-- `apps/web/src/features/recipe-steps/step-list.tsx`
+- `web/convex/schema.ts`
+- `web/convex/recipes.ts`
+- `web/src/pages/recipes-page.tsx`
+- `web/src/pages/recipe-detail-page.tsx`
+- `web/src/features/ingredients/ingredient-list.tsx`
+- `web/src/features/recipe-steps/step-list.tsx`
 
 <!-- convex-ai-start -->
 This project uses [Convex](https://convex.dev) as its backend.

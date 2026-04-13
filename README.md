@@ -4,7 +4,7 @@ Vibe-coded recipe workspace for creating ingredients, drag-and-drop steps, count
 
 ## Stack
 
-- `apps/web`: React + Vite + Tailwind + Convex
+- `web`: React + Vite + Tailwind + Convex
 
 ## Features
 
@@ -43,23 +43,23 @@ bun install
 3. Create a local web env file:
 
 ```bash
-cp .env.example apps/web/.env.local
+cp .env.example web/.env.local
 ```
 
-4. Set `VITE_CONVEX_URL` in `apps/web/.env.local` to your Convex deployment URL.
+4. Set `VITE_CONVEX_URL` in `web/.env.local` to your Convex deployment URL.
    If you want to set it explicitly, also add `VITE_CONVEX_SITE_URL` with the matching `.site` URL.
 
 5. Start Convex dev once to configure or attach the project:
 
 ```bash
-cd apps/web
+cd web
 bunx convex dev
 ```
 
 6. Configure Better Auth for your Convex deployment:
 
 ```bash
-cd apps/web
+cd web
 npx convex env set BETTER_AUTH_SECRET <generate-a-random-secret>
 npx convex env set SITE_URL http://localhost:5173
 ```
@@ -67,7 +67,7 @@ npx convex env set SITE_URL http://localhost:5173
 If you want other devices on your local network to use the app, set `SITE_URL` to the LAN address they will open and allow both origins during development:
 
 ```bash
-cd apps/web
+cd web
 npx convex env set SITE_URL http://192.168.1.15:5173
 npx convex env set TRUSTED_ORIGINS http://localhost:5173,http://192.168.1.15:5173
 ```
@@ -121,14 +121,14 @@ bun run test:web
 Run frontend build:
 
 ```bash
-cd apps/web
+cd web
 bun run build
 ```
 
 Run frontend preview:
 
 ```bash
-cd apps/web
+cd web
 bun run preview
 ```
 

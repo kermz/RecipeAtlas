@@ -6,8 +6,8 @@ coverage
 .env
 .env.local
 .env.production
-apps/*/node_modules
-apps/*/dist
-apps/*/coverage
-apps/web/.convex
-apps/*/tsconfig.tsbuildinfo
+web/node_modules
+web/dist
+web/coverage
+web/.convex
+web/tsconfig.tsbuildinfo
